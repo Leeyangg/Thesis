@@ -13,9 +13,9 @@
 The program receives as input a pre-trained CNN, which will be retrained online, and two images, which are fed to a stereo vision algorithm and to the CNN. The final output is a depth map which makes uses of both estimations to generate one with lower error than the individual estimations.
 
 ## Milestones 
-. Extracting depth maps from CNN
-. Extracting depth maps from ZED camera
-. Implementing merging algorithm presented in Mancini et al. (NOW)
+- Extracting depth maps from CNN
+- Extracting depth maps from ZED camera
+- Implementing merging algorithm presented in Mancini et al. (NOW)
 
  
 ## References
