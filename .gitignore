@@ -1,5 +1,8 @@
 build/**
-images/**
-mix_eigen/**
-mix_fcn/**
-mix_lstm/**
+*.mat
+*.fig
+*.png
+*.jpg
+*.bmp
+*.caffemodel
+*.prototxt
