@@ -15,7 +15,8 @@ The program receives as input a pre-trained CNN, which will be retrained online,
 ## Milestones 
 - Extracting depth maps from CNN
 - Extracting depth maps from ZED camera
-- (Current State) Implementing merging algorithm presented in Mancini et al. 
+- Implementing merging algorithm presented in Mancini et al.
+- (Current State) Implementing online learning strategy
 
  
 ## References
