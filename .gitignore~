@@ -1,5 +1,0 @@
-build/**
-images/**
-mix_eigen/**
-mix_fcn/**
-mix_lstm/**
