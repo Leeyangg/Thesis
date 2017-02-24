@@ -18,6 +18,9 @@ The program receives as input a pre-trained CNN, which will be retrained online,
 - Implementing merging algorithm presented in Mancini et al.
 - (Current State) Implementing online learning strategy
 
+## Caffe models
+The CNNs models can be extracted from http://sira.diei.unipg.it/supplementary/ral2016/extra.html
+
  
 ## References
 
