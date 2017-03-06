@@ -8,37 +8,17 @@ int desire_x , desired_y;
 caffe::SolverParameter solver_param;
 bool on_mouse = false;
 
-static void onMouse( int event, int x, int y, int, void* )
-{	
-    cv::Point_<int> curr_coor;
-    curr_coor.x = x;
-	 curr_coor.y = y;
-
-	 on_mouse =true;
-
-	 if(event =   cv::EVENT_LBUTTONDOWN ){
-       coordinates.push_back(curr_coor);
-
-	 }
-
-    else if(event =   cv::EVENT_RBUTTONDOWN ){
-	    coordinates.clear();
-    }
- 
-}
-
 
 int main(int argc, char** argv)
 {
-    int user_input, user_input2;
-	 /*cv::namedWindow("merged",CV_WINDOW_NORMAL);
-	 //cv::namedWindow("Zed Normalized",CV_WINDOW_NORMAL);
-	 cv::namedWindow("Merged points",CV_WINDOW_NORMAL);
-	 cv::namedWindow("Zed Stereo Depth",CV_WINDOW_NORMAL);
-	 cv::namedWindow("Mono",CV_WINDOW_NORMAL);
-	 cv::namedWindow("Original image",CV_WINDOW_NORMAL);
-	 cv::namedWindow("Weights", CV_WINDOW_NORMAL);  
-	 cv::namedWindow("Zed Stereo Depth",CV_WINDOW_NORMAL);*/
+    int user_input;
+    cv::namedWindow("Original_image",CV_WINDOW_NORMAL);
+	 cv::namedWindow("Monocular estimation",CV_WINDOW_NORMAL);
+	 cv::namedWindow("Stereo Estimation",CV_WINDOW_NORMAL);
+	 cv::namedWindow("Stereo Estimation N10",CV_WINDOW_NORMAL);
+	 cv::namedWindow("Merged Estimation",CV_WINDOW_NORMAL);
+	 cv::namedWindow("Merged Estimation2",CV_WINDOW_NORMAL);
+	 cv::namedWindow("Weights influence",CV_WINDOW_NORMAL);
 	 std::vector<cv::Mat> input_channels;
 	 std::vector<cv::Mat> input_channels_lstm;
 	 std::vector<cv::Mat> input_channels_eigen;
@@ -49,11 +29,17 @@ int main(int argc, char** argv)
     cv::Mat image, image_f;
     cv::Mat depth_cnn_rescaled, depth_zed_rescaled, depth_err_rescaled;
 	 float cum_err = 0.0;
-	 float threshold_confidence = 0.9;
 	 bool zed_input = false;
     bool vid_input = false;
-    char* path_video;
+	 bool im_seq    = false;
+    std::string path_video;
+    std::string images_path_format;
+    std::string path_frame;
     cv::VideoCapture vid;
+	 std::clock_t start;
+	 double duration;
+    bool save_image;
+	 int frame_counter = 0;
 
     //Variables caffe/CNN	
     bool lstm = false;
@@ -74,9 +60,7 @@ int main(int argc, char** argv)
     float* input_data;
     cv::Size output_geo;
 	 cv::Size output_geo_eigen;
-    cv::Mat depth_cnn; 
-
-
+    cv::Mat depth_cnn, depth_cnn_un; 
 
 	 //Variables all CNN at same time
     FILE *file_proto_lstm, *file_caffe_model_lstm, *file_proto_eigen, *file_caffe_model_eigen, *file_proto_fcn, *file_caffe_model_fcn ;
@@ -102,7 +86,7 @@ int main(int argc, char** argv)
 
 
     //Variables ZED	
-    SENSING_MODE dm_type = RAW;
+    SENSING_MODE dm_type = FULL;
     DATA_TYPE dtype = FLOAT;
     MAT_TYPE mtype = CPU;
     sl::zed::Camera* zed;
@@ -113,15 +97,15 @@ int main(int argc, char** argv)
     float baseline;
 
 
-    /*    
-    --------------------------------------------------------------------------------------------------      
+    /*     --------------------------------------------------------------------------------------------------      
     Setup ZED
     --------------------------------------------------------------------------------------------------   
     */  
+
 	 zed = new sl::zed::Camera(sl::zed::HD720);
     fx = zed->getParameters()->LeftCam.fx; 
     baseline = zed->getParameters()->baseline;
-	 zed->setDepthClampValue(20);	
+	 zed->setDepthClampValue(20000);	
 
     //init WITH self-calibration (- last parameter to false -)
     sl::zed::ERRCODE err = zed->init(sl::zed::MODE::PERFORMANCE, 0,true,false,false);
@@ -251,10 +235,11 @@ int main(int argc, char** argv)
         }
 
 
-        std::cout <<  "Video -> 1 " << std::endl << "ZED -> 2" << std::endl;
-        std::cin >> user_input2;
+        std::cout <<  "Video -> 1 " << std::endl << "ZED -> 2" << std::endl << "Image Sequence -> 3"  << std::endl;
+        std::cin.sync();
+        std::cin >> user_input;
 
-		 if( user_input2 == 1){
+		 if( user_input == 1){
 
            std::cout <<  "Insert path to video:" << std::endl;
 			  std::cin >> path_video;
@@ -269,6 +254,16 @@ int main(int argc, char** argv)
 
 		 else if(user_input == 2){
 	     zed_input = true;
+       }
+
+		 else if(user_input == 3){
+           std::cout <<  "Insert path to image and depths directory:" << std::endl;
+			  std::cin >> path_frame;
+ 			  std::cin.sync();
+           std::cout <<  "Insert common label of title:" << std::endl;
+			  std::cin >> images_path_format;
+			  im_seq = true;
+
        }
 
 		 else{
@@ -362,6 +357,7 @@ int main(int argc, char** argv)
 			
 			  output_geo = cv::Size(output_layer->width(),output_layer->height());
            depth_cnn.create(cv::Size(output_geo.width,output_geo.height),CV_32FC1);
+			  depth_cnn_un.create(cv::Size(output_geo.width,output_geo.height),CV_32FC1);
 
 			}
 
@@ -393,10 +389,6 @@ int main(int argc, char** argv)
         cv::Mat merged_points(output_geo.height,output_geo.width,CV_32FC1);
 	     weight_mat.create(cv::Size(output_geo.width,output_geo.height),CV_32FC1); 
 
-
-
-
-
     /*
     --------------------------------------------------------------------------------------------------      
      Extract frame -> Compute depth maps -> 	Post-processing -> Plot
@@ -405,6 +397,8 @@ int main(int argc, char** argv)
 
     for(;;){
     	// cv::setMouseCallback( "Zed Stereo Depth", onMouse, 0 );  
+      start = std::clock();
+	   frame_counter++;
 
 		 if(zed_input){     
 		    if (video && !zed->grab(dm_type)){
@@ -419,6 +413,18 @@ int main(int argc, char** argv)
 
 		if(vid_input){
 			vid >> image;
+		}
+
+ 		if(im_seq){
+
+     image = cv::imread("/home/ubuntu/Desktop/depth_maps/images/20000_" + std::to_string(frame_counter)+ ".png", 1);
+	//		 image = cv::imread(path_frame + images_path_format + std::to_string(frame_counter)+ ".png", 1);
+			 if(! image.data )                             
+				 {
+					  std::cout <<  "Could not open or find the image" << std::endl ;
+					  return -1;
+				 }
+
 		}
 
        if(image.cols != input_geometry_.width || image.rows != input_geometry_.height ) 
@@ -530,6 +536,9 @@ int main(int argc, char** argv)
 	     //Zed depth confidence map
 		  slMat2cvMat(zed->retrieveMeasure(sl::zed::MEASURE::CONFIDENCE)).copyTo(depth_confidence); 
 		  cv::resize(depth_confidence, depth_confidence, output_geo);	 		 
+	
+			float mean_cnn=0.0, mean_zed =0.0;	
+         int aux = 0;	
 
         for(int h=0 ; h <output_geo.height ; h++){
 	
@@ -539,42 +548,52 @@ int main(int argc, char** argv)
 
 					if(!all_cnn){
 			      	if(eigen || fcn)
-		             	depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]/ZED_NORMALIZATION_FACTOR;
+		             	depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]/CNN_NORMALIZATION_FACTOR;
 
 						else
 							depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()];
+
+						   depth_cnn_un.at<float>(h,w) = depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR;
 
 						}
 	
 						else{
 
 							depth_cnn_lstm.at<float>(h,w) = begin_mem_output_lstm[w+h*output_layer_lstm->width()];
-							depth_cnn_fcn.at<float>(h,w) = begin_mem_output_fcn[w+h*output_layer_fcn->width()]/ZED_NORMALIZATION_FACTOR;
+							depth_cnn_fcn.at<float>(h,w) = begin_mem_output_fcn[w+h*output_layer_fcn->width()]/CNN_NORMALIZATION_FACTOR;
 
 						  if( (h < output_geo_eigen.height) && (w < output_geo_eigen.width) )
-								depth_cnn_eigen.at<float>(h,w) = begin_mem_output_eigen[w+h*output_layer_eigen->width()]/ZED_NORMALIZATION_FACTOR;
+								depth_cnn_eigen.at<float>(h,w) = begin_mem_output_eigen[w+h*output_layer_eigen->width()]/CNN_NORMALIZATION_FACTOR;
 					
-						}
+					}	
 
 						//if(depth_confidence.at<float>(h,w) > threshold_confidence*max_conf){
-                  if(h%5 == 0 && w%5 == 0 && h > 0 && w > 0 && zed_map_un_resized.at<float>(h,w) > 0 && depth_confidence.at<float>(h,w) > threshold_confidence*max_conf){
+                  if(h%10 == 0 && w%10 == 0 && h > 0 && w > 0  && zed_map_un_resized.at<float>(h,w) > 0.0 && depth_confidence.at<float>(h,w) > THRESHOLD_CONFIDENCE*max_conf){
 				         curr_coor.x = w;
 						   curr_coor.y = h;
 						   coordinates.push_back(curr_coor);
-							merged_points.at<float>(h,w) =1.0;
+							merged_points.at<float>(h,w) = 1.0;
 						}
 				    
                   else{
-                      merged_points.at<float>(h,w) =0.0;
+                      merged_points.at<float>(h,w) = 0.0;
 						}
 
 						//Unnormalized depth map
 					   depth_zed.at<float>(h,w) = zed_map_un_resized.at<float>(h,w)*0.001;
+                  
 
-						if(depth_zed.at<float>(h,w) > 0.0 && depth_cnn.at<float>(h,w)*ZED_NORMALIZATION_FACTOR < 6.0){
-						   depth_err.at<float>(h,w) = abs( depth_zed.at<float>(h,w) - depth_cnn.at<float>(h,w)*ZED_NORMALIZATION_FACTOR) ;
+						/*if(depth_zed.at<float>(h,w) > 0.0 && depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR < 6.0){
+						   depth_err.at<float>(h,w) = abs( depth_zed.at<float>(h,w) - depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR) ;
 						   cum_err = cum_err + depth_err.at<float>(h,w);
-						}
+						}*/
+
+						if(depth_zed.at<float>(h,w) > 0.0){
+						   mean_zed = mean_zed + depth_zed.at<float>(h,w);
+							aux++; 
+						}		
+
+						mean_cnn = mean_cnn + depth_cnn.at<float>(h,w);					
 
 					   //if(depth_zed.at<float>(h,w) < 0.0)
 							//depth_zed.at<float>(h,w) = 1.0;
@@ -585,8 +604,8 @@ int main(int argc, char** argv)
         } 
 
 			if(coordinates.size() > 0){
-		   	 depth_merged = merge(coordinates, depth_zed, depth_cnn, weight_mat, &center_weight);
-			    circle(original_image, cv::Point_<float>(center_weight.x,  center_weight.y), 5, (255,0,0), -1, 8, 0);
+		   	 depth_merged = merge(coordinates, depth_zed, depth_cnn_un, weight_mat, &center_weight);
+			    circle( merged_points, cv::Point_<float>(center_weight.x,  center_weight.y), 5, (255,255,255), -1, 8, 0);
 			}
 		
 			else{
@@ -596,7 +615,11 @@ int main(int argc, char** argv)
 		  // if(!on_mouse)
          cum_err = 0;
          coordinates.clear();
-			
+			mean_cnn = CNN_NORMALIZATION_FACTOR*mean_cnn/(output_geo.height*output_geo.width);
+         mean_zed = mean_zed/(aux);
+
+			std::cout << "Mean ZED = " << mean_zed << "     Mean CNN = " << mean_cnn << std::endl;
+
 
 /* 
 		 float mean[4];
@@ -621,30 +644,38 @@ int main(int argc, char** argv)
 			  Output depth map
 			  --------------------------------------------------------------------------------------------------   
 			  */
+
 		     // CNN map
-			  plot_maps(depth_cnn, 255*ZED_NORMALIZATION_FACTOR/NORMALIZATION_FACTOR, output_geo, cv::COLORMAP_RAINBOW, "Monocular estimation");
+			  plot_maps(depth_cnn, 255*CNN_NORMALIZATION_FACTOR/NORMALIZATION_FACTOR, output_geo, cv::COLORMAP_RAINBOW, "Monocular estimation", save_image);
 
 				//Setup ZED map
-            plot_maps(depth_zed, 255/NORMALIZATION_FACTOR, output_geo, cv::COLORMAP_RAINBOW, "Stereo Estimation");
+            plot_maps(depth_zed, 255/NORMALIZATION_FACTOR, output_geo, cv::COLORMAP_RAINBOW, "Stereo Estimation", save_image);
+            plot_maps(depth_zed, 255/10, output_geo, cv::COLORMAP_RAINBOW, "Stereo Estimation N10", save_image);
 
 		      //Setup Merged map
-            plot_maps(depth_merged, 255, output_geo, cv::COLORMAP_RAINBOW, "Merged Estimation");
+            plot_maps(depth_merged, 255, output_geo, cv::COLORMAP_RAINBOW, "Merged Estimation", save_image);
+            plot_maps(depth_merged, 255*NORMALIZATION_FACTOR/10, output_geo, cv::COLORMAP_RAINBOW, "Merged Estimation2", save_image);
 
 				//Setup Local weight influence
-            plot_maps(depth_merged, 255, output_geo, cv::COLORMAP_AUTUMN, "Local weights");
-		
+            plot_maps(weight_mat, 255, output_geo, cv::COLORMAP_BONE, "Weights influence", save_image);
+            
 			    //Display other maps
-				  cv::imshow("Points 4 merge", merged_points);
-				 cv::imshow("Original image", original_image);
-				 char key = cv::waitKey(10);
-	
+				 cv::imshow("Points 4 merge", merged_points);
+				 cv::imshow("Zed normalized", zed_map_nn_resized);
+			    cv::imshow("Original image", original_image);
+
+				if(save_image){
+					cv::imwrite("../images/original.jpeg", original_image);
+					cv::imwrite("../images/normalized.jpeg", zed_map_nn_resized);
+               cv::imwrite("../images/merged.jpeg", merged_points);
+
+			}
+
+				 char key = cv::waitKey(70);
+	          save_image = false;
 					switch(key){
-						case 'p':
-							threshold_confidence = threshold_confidence + 0.1;
-
-
-						case 'm':
-							threshold_confidence = threshold_confidence - 0.1;
+						case 's':
+							save_image = true;
 
 					}
 
@@ -653,17 +684,17 @@ int main(int argc, char** argv)
 		else{
 
 			     // CNN map
-				  plot_maps(depth_cnn_eigen, 255, output_geo_eigen, cv::COLORMAP_RAINBOW, "Eigen estimation");
-				  plot_maps(depth_cnn_lstm,  255, output_geo,       cv::COLORMAP_RAINBOW, "LSTM estimation" );
-				  plot_maps(depth_cnn_fcn,   255, output_geo,       cv::COLORMAP_RAINBOW, "FCN estimation"  );
+				  plot_maps(depth_cnn_eigen, 255, output_geo_eigen, cv::COLORMAP_RAINBOW, "Eigen estimation", save_image);
+				  plot_maps(depth_cnn_lstm,  255, output_geo,       cv::COLORMAP_RAINBOW, "LSTM estimation", save_image );
+				  plot_maps(depth_cnn_fcn,   255, output_geo,       cv::COLORMAP_RAINBOW, "FCN estimation", save_image  );
 
 				  //ZED map
-              plot_maps(depth_zed, 255/NORMALIZATION_FACTOR, output_geo, cv::COLORMAP_RAINBOW, "Stereo Estimation");
+              plot_maps(depth_zed, 255/NORMALIZATION_FACTOR, output_geo, cv::COLORMAP_RAINBOW, "Stereo Estimation", save_image);
 
 				  //Other maps
 				  cv::imshow("Original image", original_image);
 
-				  cv::waitKey(10);
+				  cv::waitKey(40);
 
 		}
 
@@ -671,6 +702,10 @@ int main(int argc, char** argv)
 
         if(!video)
             break;
+
+        duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+
+        std::cout<<"FPS: "<< 1/duration <<'\n';
 
     }
 
