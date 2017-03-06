@@ -25,6 +25,6 @@ The CNNs models can be extracted from http://sira.diei.unipg.it/supplementary/ra
  
 ## References
 
-Facil, J. et al - Deep Single and Direct Multi-View Depth Fusion
-Mancini, M. et al -  Towards Domain Independence for Learning-Based
-Eigen et al  - Predicting Depth, Surface Normals and Semantic Labels with a Common Multi-Scale Convolutional Architecture
+- Facil, J. et al - Deep Single and Direct Multi-View Depth Fusion
+- Mancini, M. et al -  Towards Domain Independence for Learning-Based
+- Eigen et al  - Predicting Depth, Surface Normals and Semantic Labels with a Common Multi-Scale Convolutional Architecture
