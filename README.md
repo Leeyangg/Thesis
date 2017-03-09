@@ -17,7 +17,8 @@ The program receives as input a pre-trained CNN, which will be retrained online,
 - Extracting depth maps from ZED camera
 - Implementing merging algorithm presented in Mancini et al.
 - Implement error functions class 
-- (Current State) Implementing online learning strategy
+- Generate Depth Dataset from indoor footages at TU DELFT
+- (Current State) Implementing offline/online learning strategy
 
 ## Caffe models
 The CNNs models can be extracted from http://sira.diei.unipg.it/supplementary/ral2016/extra.html

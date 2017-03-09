@@ -1,7 +1,3 @@
-#include <caffe/caffe.hpp>
-#include "caffe/layers/memory_data_layer.hpp"
-#include <caffe/sgd_solvers.hpp>
-
 //opencv includes
 #include "opencv2/opencv.hpp"
 #include <opencv2/core/core.hpp>
@@ -22,10 +18,6 @@
 #include <memory>
 #include <iostream>
 #include <math.h>
-
-//ZED Includes
-#include <zed/Camera.hpp>
-#include <zed/utils/GlobalDefine.hpp>
 
 #define NORMALIZATION_FACTOR 39.75
 #define CNN_NORMALIZATION_FACTOR 39.75
