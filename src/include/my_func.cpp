@@ -1,7 +1,7 @@
 #include "my_func.h"
 
 #define THRESHOLD_ERR 1.25
-#define CONVERT_SCALE 20000.0/(255*1000.0)
+#define CONVERT_SCALE 1 //10000.0/(255*1000.0)
 
 cv::Mat merge(std::vector<cv::Point_<int>> coord, cv::Mat stereo, cv::Mat mono,cv::Mat weight_mat , cv::Point_<float>* center_weight ){
 
@@ -94,13 +94,13 @@ cv::Mat merge(std::vector<cv::Point_<int>> coord, cv::Mat stereo, cv::Mat mono,c
 	   cnn_merged_depth  = cnn_merged_depth  /(aux);
 	   zed_merged_depth  =  zed_merged_depth  /(aux);
 
-      std::cout << (float) aux/(stereo.rows*stereo.cols) << " points used" << "  CNN Merged = " << cnn_merged_depth << "  ZED Merged = " <<  zed_merged_depth << " Merged = " << mean_merged_depth <<  std::endl;
+    //  std::cout << (float) aux/(stereo.rows*stereo.cols) << " points used" << "  CNN Merged = " << cnn_merged_depth << "  ZED Merged = " <<  zed_merged_depth << " Merged = " << mean_merged_depth <<  std::endl;
 
       return merged;
 }
 
 
-void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map, const char* name_window, bool save_image){
+void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map, std::string name_window, bool save_image){
 
 	cv::Mat map_color(geometry.height, geometry.width, CV_32FC3);
    cv::Mat map_color_bad(geometry.height, geometry.width, CV_32FC3,0.0);
@@ -158,7 +158,7 @@ float Err_func::get_error(std::string error_func){
 		return  rmse_lin(map_gt, map_pred);
 
 	else if(error_func == "rmse_log")
-		return  rmse_lin(map_gt, map_pred);
+		return  rmse_log(map_gt, map_pred);
 
 	else if(error_func == "rmse_log_inv")
 		return  rmse_log_inv(map_gt, map_pred);
@@ -181,8 +181,11 @@ float Err_func::threshold_err(cv::Mat map_gt, cv::Mat map_pred){
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
 
-			if( (float) map_gt.at<uchar>(h,w)== (float) map_gt.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)== (float) map_pred.at<uchar>(h,w) && ((float) map_pred.at<uchar>(h,w)/ (float) map_gt.at<uchar>(h,w) < THRESHOLD_ERR) && ( (float) map_gt.at<uchar>(h,w)/ (float) map_pred.at<uchar>(h,w)< THRESHOLD_ERR) ){
+			if( (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w) ){
+
+				if( ((float) map_pred.at<float>(h,w)/ (float) map_gt.at<float>(h,w) < THRESHOLD_ERR) && ( (float) map_gt.at<float>(h,w)/ (float) map_pred.at<float>(h,w)< THRESHOLD_ERR))
 				curr_err = curr_err + 1.0;
+
 				n++;
 			}
 		}
@@ -205,8 +208,8 @@ float Err_func::abs_rel_diff(cv::Mat map_gt, cv::Mat map_pred){
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
 
-			if((float) map_gt.at<uchar>(h,w)== (float) map_gt.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)== (float) map_pred.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)){
-				curr_err = curr_err + (abs( (float) map_pred.at<uchar>(h,w)*CONVERT_SCALE - (float) map_gt.at<uchar>(h,w)*CONVERT_SCALE ) / ((float) map_gt.at<uchar>(h,w)*CONVERT_SCALE));
+			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w) && (float) map_pred.at<float>(h,w)){
+				curr_err = curr_err + (abs( (float) map_pred.at<float>(h,w)*CONVERT_SCALE - (float) map_gt.at<float>(h,w)*CONVERT_SCALE ) / ((float) map_gt.at<float>(h,w)*CONVERT_SCALE));
 				n++;
 			}
 		}
@@ -225,17 +228,16 @@ float Err_func::sqr_rel_diff(cv::Mat map_gt, cv::Mat map_pred){
 
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<uchar>(h,w)== (float) map_gt.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)== (float) map_pred.at<uchar>(h,w)){
-				curr_err = curr_err + ((pow((((float) map_pred.at<uchar>(h,w)*CONVERT_SCALE) - ((float) map_gt.at<uchar>(h,w)*CONVERT_SCALE) ),2))  /  ((float) map_gt.at<uchar>(h,w)*CONVERT_SCALE));
+			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+				curr_err = curr_err + ((pow((((float) map_pred.at<float>(h,w)*CONVERT_SCALE) - ((float) map_gt.at<float>(h,w)*CONVERT_SCALE) ),2))  /  ((float) map_gt.at<float>(h,w)*CONVERT_SCALE));
 				n++;
 			}
 		}
 	}
 
 	return (curr_err/n);
-
-
 }
+
 float Err_func::rmse_lin(cv::Mat map_gt, cv::Mat map_pred){
 
 	float curr_err = 0.0;
@@ -243,8 +245,8 @@ float Err_func::rmse_lin(cv::Mat map_gt, cv::Mat map_pred){
 
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<uchar>(h,w)== (float) map_gt.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)== (float) map_pred.at<uchar>(h,w)){
-				curr_err = curr_err + (pow(   (float) map_pred.at<uchar>(h,w)*CONVERT_SCALE - (float) map_gt.at<uchar>(h,w)*CONVERT_SCALE,2));
+			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+				curr_err = curr_err + (pow(   (float) map_pred.at<float>(h,w)*CONVERT_SCALE - (float) map_gt.at<float>(h,w)*CONVERT_SCALE,2));
 				n++;
 			}
 		}
@@ -254,16 +256,14 @@ float Err_func::rmse_lin(cv::Mat map_gt, cv::Mat map_pred){
 
 }
 
-
-
 float Err_func::rmse_log(cv::Mat map_gt, cv::Mat map_pred){
 
 	float curr_err = 0.0;
     float n = 0.0;
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<uchar>(h,w)== (float) map_gt.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)== (float) map_pred.at<uchar>(h,w)){
-				curr_err = curr_err + (pow(   log((float) map_pred.at<uchar>(h,w)*CONVERT_SCALE) - log((float) map_gt.at<uchar>(h,w)*CONVERT_SCALE),2));
+			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+				curr_err = curr_err + (pow(   log((float) map_pred.at<float>(h,w)*CONVERT_SCALE) - log((float) map_gt.at<float>(h,w)*CONVERT_SCALE),2));
 				n++;
 			}
 
@@ -284,15 +284,14 @@ float Err_func::rmse_log_inv(cv::Mat map_gt, cv::Mat map_pred){
 
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<uchar>(h,w)== (float) map_gt.at<uchar>(h,w) && (float) map_pred.at<uchar>(h,w)== (float) map_pred.at<uchar>(h,w)){
-				di = log((float) map_pred.at<uchar>(h,w)*CONVERT_SCALE) - log((float) map_gt.at<uchar>(h,w)*CONVERT_SCALE);
+			if( (float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+				di = log(  (float) map_pred.at<float>(h,w)*CONVERT_SCALE) - log(  (float) map_gt.at<float>(h,w)*CONVERT_SCALE );
 				partial1 = partial1 + pow(di,2);
 				partial2 = partial2 + di;
 				n++;
 			}
 		}
 	}
-
 	return ( partial1/n - pow(partial2,2)/pow(n,2) );
 
 

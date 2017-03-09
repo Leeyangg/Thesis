@@ -33,7 +33,7 @@
 
 cv::Mat merge(std::vector<cv::Point_<int>> coord, cv::Mat stereo, cv::Mat mono,cv::Mat weight_mat , cv::Point_<float>* center_weight );
 
-void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map, const char* name_window, bool save_image);
+void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map,  std::string  name_window, bool save_image);
 
 class Err_func{
 
