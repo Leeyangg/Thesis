@@ -36,3 +36,7 @@
 *.bmp
 *.caffemodel
 *.prototxt
+
+*.h~
+
+*.cpp~

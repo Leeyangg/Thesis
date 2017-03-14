@@ -78,6 +78,7 @@ int val_points = 0;
 int width;
 int height;
 bool quit = false;
+cv::Mat imagezed;
 
 //Variables caffe/CNN	
 bool lstm = false;
@@ -97,6 +98,7 @@ float* input_data;
 cv::Size output_geo;
  cv::Size output_geo_eigen;
 cv::Mat depth_cnn, depth_cnn_un; 
+
 
 //Variables ZED	4
 #ifdef COMPILE_ZED

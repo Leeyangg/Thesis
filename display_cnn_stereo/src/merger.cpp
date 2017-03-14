@@ -3,7 +3,9 @@
 
 int main(int argc, char** argv)
 {
-    /* 
+ 
+Caffe::set_mode(Caffe::GPU);
+   /* 
     --------------------------------------------------------------------------------------------------      
     Setup models and image
     --------------------------------------------------------------------------------------------------   
@@ -21,12 +23,12 @@ int main(int argc, char** argv)
             case 1:
             	 path_to_protofile  = "../mix_lstm/mix_lstm_deploy.prototxt";
             	 path_to_modelcaffe = "../mix_lstm/mix_lstm.caffemodel";
-                 lstm = true;  
+                lstm = true;  
                 break;
            
             case 2:
-                path_to_protofile  = "../mix_eigen/fine_net_deploy.prototxt";
-            	path_to_modelcaffe = "../mix_eigen/eigen_fine_mixed.caffemodel";
+                path_to_protofile  = "../mix_eigen/mix_eigen_deploy.prototxt";
+            	path_to_modelcaffe = "../mix_eigen/WWE_iter_1.caffemodel";
                 eigen = true;
                 break;
           
@@ -34,6 +36,7 @@ int main(int argc, char** argv)
                 path_to_protofile  = "../mix_fcn/mix_fcn_deploy.prototxt";
             	path_to_modelcaffe = "../mix_fcn/mix_fcn.caffemodel";
                 fcn = true;
+					break;
 
             default:
                 std::cerr << "  Please select a correct option " << std::endl;
@@ -62,8 +65,8 @@ int main(int argc, char** argv)
 
 		    #ifdef COMPILE_ZED
 		    	zed_input = true;
-
 		    #else
+
 		    	std::cout << "ERROR: ZED NOT FOUND" << std::endl;
 		    	return 0;
 
@@ -81,6 +84,8 @@ int main(int argc, char** argv)
 
             std::cout <<  "Insert sequence log title:" << std::endl;
 			std::cin >> images_path_format;
+			if(images_path_format == "empty")
+				images_path_format = "";
 			im_seq = true;
 
 
@@ -117,12 +122,13 @@ int main(int argc, char** argv)
     Setup ZED
     --------------------------------------------------------------------------------------------------   
     */  
+	   if(zed_input){
 	#ifdef COMPILE_ZED
 
-		zed = new sl::zed::Camera(sl::zed::HD720);
+		 zed = new sl::zed::Camera(sl::zed::HD720);
 	    fx = zed->getParameters()->LeftCam.fx; 
 	    baseline = zed->getParameters()->baseline;
-		zed->setDepthClampValue(MAX_DEPTH_ZED);	
+		 zed->setDepthClampValue(MAX_DEPTH_ZED);	
 
 	    //init WITH self-calibration (- last parameter to false -)
 	    sl::zed::ERRCODE err = zed->init(sl::zed::MODE::PERFORMANCE, 0,true,false,false);
@@ -137,21 +143,25 @@ int main(int argc, char** argv)
 
 	    width = zed->getImageSize().width;
 	    height = zed->getImageSize().height;
-	    cv::Mat imagezed(height, width, CV_32FC3,1);
+	    imagezed.create(height, width, CV_32FC3);
+	    image.create(height, width, CV_32FC3);
 	    cv::Mat init_depth_zed_mat(height, width, CV_8UC4,1);
+		#endif
 
-	#else
+      } 
 
-	    image = cv::imread(path_frame + images_path_format + "1.png", 1);
-	    if(! image.data ){
-			std::cout <<  " Could not open or find image" << std::endl ;
-			return -1;
+      else{
+	    //image = cv::imread(path_frame + images_path_format + "1.png", 1);
+	    image = cv::imread("/home/diogo/Desktop/datasets/copy/train/labels/1.png", 1);
+			 if(! image.data ){
+				std::cout <<  " Could not open or find image" << std::endl ;
+				return -1;
+			 }
+
+			height = image.rows;
+			width  = image.cols;
+      
 		}
-
-		height = image.rows;
-		width = image.cols;
-
-	#endif
 
       /*
     --------------------------------------------------------------------------------------------------      
@@ -165,7 +175,7 @@ int main(int argc, char** argv)
                     net_.reset(new Net<float>(path_to_protofile.c_str(), TEST));
                     net_->CopyTrainedLayersFrom(path_to_modelcaffe.c_str());
                     input_layer = net_->input_blobs()[0];              
-   					input_geometry_ = cv::Size(input_layer->width(), input_layer->height()); 
+   					  input_geometry_ = cv::Size(input_layer->width(), input_layer->height()); 
     } 
 
     else {
@@ -184,12 +194,14 @@ int main(int argc, char** argv)
       output_norm = net_->blob_by_name("depth");   
 
     else if(eigen)
-    	output_norm = net_->blob_by_name("fine_depth");  
+    	output_norm = net_->blob_by_name("gt_depth_norm"); 
   
   	output_layer = net_->output_blobs()[0];
   	
 	output_geo = cv::Size(output_layer->width(),output_layer->height());
 	depth_cnn.create(cv::Size(output_geo.width,output_geo.height),CV_32FC1);
+	cv::Mat depth_cnn_raw;
+	depth_cnn_raw.create(cv::Size(output_geo.width,output_geo.height),CV_32FC1);
   	depth_cnn_un.create(cv::Size(output_geo.width,output_geo.height),CV_32FC1);
 
     //Depth Matrices
@@ -217,16 +229,15 @@ int main(int argc, char** argv)
     */
 
     for(;;){
-   
+
     	start = std::clock();
 	    frame_counter++;
         //std::cout << frame_counter << std::endl;
 		#ifdef COMPILE_ZED
 			if(zed_input){     
-			    if (zed->grab(dm_type)){
+			    if (!zed->grab(dm_type)){
 			       // Retrieve left color image
-			       sl::zed::Mat left = zed->retrieveImage(sl::zed::SIDE::RIGHT);
-			       imagezed = slMat2cvMat(left);
+					 slMat2cvMat(zed->retrieveImage(sl::zed::SIDE::LEFT)).copyTo(imagezed);
 			       imagezed.copyTo(image);
 			    }
 	        }
@@ -238,8 +249,8 @@ int main(int argc, char** argv)
 
  		if(im_seq){
 
-			//image = cv::imread("/home/diogo/Desktop/datasets/copy/train/labels/" + std::to_string(frame_counter)+ ".png", 1);
-	    image = cv::imread(path_frame + images_path_format + std::to_string(frame_counter)+ ".png", 1);
+			image = cv::imread("/home/diogo/Desktop/datasets/copy/train/labels/" + std::to_string(frame_counter)+ ".png", 1);
+	    //image = cv::imread(path_frame + images_path_format + std::to_string(frame_counter)+ ".png", 1);
 
 			if(! image.data ){
 					  std::cout <<  " Could not open or find image" << std::endl ;
@@ -247,11 +258,12 @@ int main(int argc, char** argv)
 				 }
 		}
 
+
         if(image.cols != input_geometry_.width || image.rows != input_geometry_.height ) 
             cv::resize(image, image, input_geometry_);
 
         cv::Mat original_image(input_geometry_.height, input_geometry_.width ,CV_32FC3);         
-  	    image.copyTo(original_image);
+  	     image.copyTo(original_image);
         image.convertTo(image, CV_32FC3);
 
         /*
@@ -260,8 +272,8 @@ int main(int argc, char** argv)
         --------------------------------------------------------------------------------------------------   
         */
 
-		input_data = input_layer->mutable_cpu_data();
-		nchannels = input_layer->channels();
+		  input_data = input_layer->mutable_cpu_data();
+		 nchannels = input_layer->channels();
 		
         for (int i = 0; i < nchannels; ++i) {
 		         cv::Mat channel(input_geometry_.height,input_geometry_.width, CV_32FC1, input_data);
@@ -333,7 +345,7 @@ int main(int argc, char** argv)
 
 		float mean_cnn=0.0, mean_zed =0.0;	
         int aux = 0;	
-
+cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
         for(int h=0 ; h <output_geo.height ; h++){
 	
 			cv::Point_<int> curr_coor;
@@ -341,11 +353,13 @@ int main(int argc, char** argv)
             for(int w = 0 ; w < output_geo.width; w++){
 
 			    if(eigen || fcn)
-		            depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]/CNN_NORMALIZATION_FACTOR;
+		       	depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]/CNN_NORMALIZATION_FACTOR;
+      // depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()];
 
 				else
 					depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()];
 
+		            depth_cnn_raw.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]*255/10;
 					depth_cnn_un.at<float>(h,w) = depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR;
 				
 						//if(depth_confidence.at<float>(h,w) > threshold_confidence*max_conf){
@@ -398,6 +412,7 @@ int main(int argc, char** argv)
 							//depth_zed.at<float>(h,w) = 1.0;
 
 			}
+
 					//std::cout << val_points << std::endl;
         } 
 
