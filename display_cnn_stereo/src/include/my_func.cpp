@@ -23,23 +23,24 @@ cv::Mat merge(std::vector<cv::Point_<int>> coord, cv::Mat stereo, cv::Mat mono,c
    cv::Sobel(mono,dx, -1, 1, 0, -1, 1, 0, cv::BORDER_DEFAULT);
    cv::Sobel(mono,dy, -1, 0, 1, -1, 1, 0, cv::BORDER_DEFAULT); 
 
-   center_weight->x = coord[0].x ;
-	center_weight->y = coord[0].y ;
+    center_weight->x = coord[50].x ;
+	center_weight->y = coord[50].y ;
 
 	for(int h=0 ; h <mono.rows ; h++){
 
 	  for(int w = 0 ; w < mono.cols; w++){
-
+	  	  if(mono.at<float>(h,w) == 0.0)
+	  	  	mono.at<float>(h,w) = 0.4;
 		  //weight_mat.at<float>(h,w) = 0.0;
 	     for(int i = 0; i < coord.size(); i++){
 
 		     w1 = exp( (-1*sqrt(  pow((h - coord[i].y),2) +  pow((w - coord[i].x),2) ))/sig1 );
-			  w2 = (1/(abs(dx.at<float>(coord[i].y, coord[i].x) - dx.at<float>(h,w)) + sig2)) * (1/(abs(   dy.at<float>(coord[i].y, coord[i].x) - dy.at<float>(h,w) ) + sig2)) ;
-           w3 = exp( -abs( mono.at<float>(h,w)  + dx.at<float>(h,w)*(h - coord[i].y) - mono.at<float>(coord[i].y, coord[i].x)  ) ) + sig3;
-           w4 = exp( -abs( mono.at<float>(h,w) + dy.at<float>(h,w)*(h - coord[i].y) - mono.at<float>(coord[i].y, coord[i].x)  ) ) + sig3;
+			 w2 = (1/(abs(dx.at<float>(coord[i].y, coord[i].x) - dx.at<float>(h,w)) + sig2)) * (1/(abs(   dy.at<float>(coord[i].y, coord[i].x) - dy.at<float>(h,w) ) + sig2)) ;
+             w3 = exp( -abs( mono.at<float>(h,w)  + dx.at<float>(h,w)*(h - coord[i].y) - mono.at<float>(coord[i].y, coord[i].x)  ) ) + sig3;
+             w4 = exp( -abs( mono.at<float>(h,w) + dy.at<float>(h,w)*(h - coord[i].y) - mono.at<float>(coord[i].y, coord[i].x)  ) ) + sig3;
            
 		     wnn.push_back(w1*w2*w3*w4);
-           sum_w = sum_w + w1*w2*w3*w4;
+             sum_w = sum_w + w1*w2*w3*w4;
 		 	
 			  if(first){
 			     min_wnn = w1*w2*w3*w4;
@@ -57,16 +58,16 @@ cv::Mat merge(std::vector<cv::Point_<int>> coord, cv::Mat stereo, cv::Mat mono,c
 
 				inter_depth = inter_depth +  w_norm*( stereo.at<float>(coord[i].y,coord[i].x) + mono.at<float>(h,w) - mono.at<float>(coord[i].y, coord[i].x));
 
-            if(i == 0)
+            if(i == 50)
 				 	  weight_mat.at<float>(h,w) =  w_norm;
 
 
         }
 
-	   merged.at<float>(h,w) =  inter_depth/NORMALIZATION_FACTOR;
+	   merged.at<float>(h,w) =  inter_depth;
 
 		if(inter_depth < 0.0){
-		   merged.at<float>(h,w) = -888.0;
+		   merged.at<float>(h,w) = 1;
       }
 	
 	   else{
@@ -100,7 +101,7 @@ cv::Mat merge(std::vector<cv::Point_<int>> coord, cv::Mat stereo, cv::Mat mono,c
 }
 
 
-void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map, std::string name_window, bool save_image){
+void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map, std::string name_window, bool save_image, int frame){
 
 	cv::Mat map_color(geometry.height, geometry.width, CV_32FC3);
    cv::Mat map_color_bad(geometry.height, geometry.width, CV_32FC3,0.0);
@@ -128,7 +129,7 @@ void plot_maps(cv::Mat map, float scale_factor, cv::Size geometry, int color_map
   // cv::imshow("Bad pixels", map_color_bad);
 
 	if(save_image)
-		cv::imwrite("../images/" +name+ ".jpeg", map_color);
+		cv::imwrite("../images/" +name+ std::to_string(frame) +  ".jpeg", map_color);
    }
 
    else{
@@ -208,7 +209,7 @@ float Err_func::abs_rel_diff(cv::Mat map_gt, cv::Mat map_pred){
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
 
-			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w) && (float) map_pred.at<float>(h,w)){
+			if((float) map_gt.at<float>(h,w) >= 0.0 && (float) map_pred.at<float>(h,w) >= 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w) && (float) map_pred.at<float>(h,w)){
 				curr_err = curr_err + (abs( (float) map_pred.at<float>(h,w)*CONVERT_SCALE - (float) map_gt.at<float>(h,w)*CONVERT_SCALE ) / ((float) map_gt.at<float>(h,w)*CONVERT_SCALE));
 				n++;
 			}
@@ -228,13 +229,13 @@ float Err_func::sqr_rel_diff(cv::Mat map_gt, cv::Mat map_pred){
 
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+			if((float) map_gt.at<float>(h,w) >= 0.0 && (float) map_pred.at<float>(h,w) >= 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
 				curr_err = curr_err + ((pow((((float) map_pred.at<float>(h,w)*CONVERT_SCALE) - ((float) map_gt.at<float>(h,w)*CONVERT_SCALE) ),2))  /  ((float) map_gt.at<float>(h,w)*CONVERT_SCALE));
 				n++;
 			}
 		}
 	}
-
+	//std::cout << "n = " << n << " ";
 	return (curr_err/n);
 }
 
@@ -245,12 +246,13 @@ float Err_func::rmse_lin(cv::Mat map_gt, cv::Mat map_pred){
 
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+			if((float) map_gt.at<float>(h,w) >= 0.0 && (float) map_pred.at<float>(h,w) >= 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
 				curr_err = curr_err + (pow(   (float) map_pred.at<float>(h,w)*CONVERT_SCALE - (float) map_gt.at<float>(h,w)*CONVERT_SCALE,2));
 				n++;
 			}
 		}
 	}
+	//std::cout << "n = " << n << " ";
 
 	return sqrt(curr_err/n);
 
@@ -262,13 +264,14 @@ float Err_func::rmse_log(cv::Mat map_gt, cv::Mat map_pred){
     float n = 0.0;
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if((float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+			if((float) map_gt.at<float>(h,w) >= 0.0 && (float) map_pred.at<float>(h,w) >= 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
 				curr_err = curr_err + (pow(   log((float) map_pred.at<float>(h,w)*CONVERT_SCALE) - log((float) map_gt.at<float>(h,w)*CONVERT_SCALE),2));
 				n++;
 			}
 
 		}
 	}
+	//std::cout << "n = " << n << " ";
 
 	return sqrt(curr_err/n);
 
@@ -284,7 +287,7 @@ float Err_func::rmse_log_inv(cv::Mat map_gt, cv::Mat map_pred){
 
 	for(int h =0; h < map_gt.rows; h++){
 		for(int w =0; w < map_gt.cols; w++){
-			if( (float) map_gt.at<float>(h,w) > 0.0 && (float) map_pred.at<float>(h,w) > 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
+			if( (float) map_gt.at<float>(h,w) >= 0.0 && (float) map_pred.at<float>(h,w) >= 0.0 && (float) map_gt.at<float>(h,w)== (float) map_gt.at<float>(h,w) && (float) map_pred.at<float>(h,w)== (float) map_pred.at<float>(h,w)){
 				di = log(  (float) map_pred.at<float>(h,w)*CONVERT_SCALE) - log(  (float) map_gt.at<float>(h,w)*CONVERT_SCALE );
 				partial1 = partial1 + pow(di,2);
 				partial2 = partial2 + di;
@@ -292,6 +295,7 @@ float Err_func::rmse_log_inv(cv::Mat map_gt, cv::Mat map_pred){
 			}
 		}
 	}
+	//std::cout << "n = " << n << " ";
 	return ( partial1/n - pow(partial2,2)/pow(n,2) );
 
 

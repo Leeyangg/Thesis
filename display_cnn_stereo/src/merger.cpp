@@ -309,8 +309,6 @@ Caffe::set_mode(Caffe::GPU);
 				slMat2cvMat(zed->retrieveMeasure(sl::zed::MEASURE::CONFIDENCE)).copyTo(depth_confidence); 
 				cv::resize(depth_confidence, depth_confidence, output_geo);	 
 
-	            cv::resize(depth_confidence, depth_confidence, output_geo);	
-	            cv::minMaxLoc(depth_confidence, &min_conf, &max_conf);
 
 			#else
 
@@ -345,7 +343,7 @@ Caffe::set_mode(Caffe::GPU);
 
 		float mean_cnn=0.0, mean_zed =0.0;	
         int aux = 0;	
-cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
+
         for(int h=0 ; h <output_geo.height ; h++){
 	
 			cv::Point_<int> curr_coor;
@@ -354,7 +352,6 @@ cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
 
 			    if(eigen || fcn)
 		       	depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]/CNN_NORMALIZATION_FACTOR;
-      // depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()];
 
 				else
 					depth_cnn.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()];
@@ -362,19 +359,6 @@ cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
 		            depth_cnn_raw.at<float>(h,w) = begin_mem_output[w+h*output_layer->width()]*255/10;
 					depth_cnn_un.at<float>(h,w) = depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR;
 				
-						//if(depth_confidence.at<float>(h,w) > threshold_confidence*max_conf){
-              /*    if(h%10 == 0 && w%10 == 0 && h > 0 && w > 0  && zed_map_un_resized.at<float>(h,w) > 0.0 && depth_confidence.at<float>(h,w) > THRESHOLD_CONFIDENCE*max_conf){
-				         curr_coor.x = w;
-						   curr_coor.y = h;
-						   coordinates.push_back(curr_coor);
-							merged_points.at<float>(h,w) = 1.0;
-						}
-				    
-                  else{
-                      merged_points.at<float>(h,w) = 0.0;
-						}
-*/
-
 
 				//Unnormalized depth map
 				if(zed_input)
@@ -389,27 +373,22 @@ cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
 
 				//std::cout << depth_cnn.at<float>(h,w) << " ";
 
-				if(depth_confidence.at<float>(h,w) < 2.1 && zed_input)
-					depth_zed.at<float>(h,w) = 200;
-
-				if(!zed_input && IMPORT_CONFIDENCE){
-					if(depth_confidence.at<float>(h,w) < 2.1)
-						depth_zed.at<float>(h,w) = 200;
-				}
-
-						/*if(depth_zed.at<float>(h,w) > 0.0 && depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR < 6.0){
-						   depth_err.at<float>(h,w) = abs( depth_zed.at<float>(h,w) - depth_cnn.at<float>(h,w)*CNN_NORMALIZATION_FACTOR) ;
-						   cum_err = cum_err + depth_err.at<float>(h,w);
-						}*/
-
 				if(depth_zed.at<float>(h,w) > 0.0 && depth_cnn_un.at<float>(h,w) > 0.0){
 					val_points++; 
 				}		
 
-				mean_cnn = mean_cnn + depth_cnn.at<float>(h,w);					
+				if(depth_confidence.at<float>(h,w) < 30){
+				         curr_coor.x = w;
+						   curr_coor.y = h;
+						   coordinates.push_back(curr_coor);
+							merged_points.at<float>(h,w) = 1.0;
+						}
+				    
+                  else{
+                      merged_points.at<float>(h,w) = 0.0;
+						}	
 
-					   //if(depth_zed.at<float>(h,w) < 0.0)
-							//depth_zed.at<float>(h,w) = 1.0;
+				mean_cnn = mean_cnn + depth_cnn.at<float>(h,w);	
 
 			}
 
@@ -417,7 +396,7 @@ cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
         } 
 
 		if(coordinates.size() > 0){
-	   	// depth_merged = merge(coordinates, depth_zed, depth_cnn_un, weight_mat, &center_weight);
+	   	    depth_merged = merge(coordinates, depth_zed, depth_cnn_un, weight_mat, &center_weight);
 		    circle( merged_points, cv::Point_<float>(center_weight.x,  center_weight.y), 5, (255,255,255), -1, 8, 0);
 		}
 		
@@ -425,15 +404,40 @@ cv::Mat fake(output_geo.height,output_geo.width,CV_32FC1);
 		   depth_cnn.copyTo(depth_merged);
 		}
 
-		errors.push_mat_gt( depth_zed);
-		errors.push_mat_pred( depth_cnn_un);
-        std::cout << "threshold_err = " << errors.get_error("threshold") << std::endl;
-	    std::cout << "abs_rel_diff error = " << errors.get_error("abs_rel_diff") << std::endl;
-        std::cout << "sqr_rel_diff = " << errors.get_error("sqr_rel_diff") << std::endl;
-	    std::cout << "rmse_lin = " << errors.get_error("rmse_lin") << std::endl;
-	    std::cout << "rmse_log = " << errors.get_error("rmse_log") << std::endl;
-        std::cout << "inv scale error = " << errors.get_error("rmse_log_inv") << std::endl << std::endl;
-		std::cout << val_points << "/" << merged_points.rows*merged_points.cols << " valid points" << std::endl;
+
+		// Compare before and after merging
+        std::cout << "threshold  " << errors.get_error("threshold") ;//<< std::endl;
+        errors.push_mat_pred( depth_merged);
+        std::cout << " " << errors.get_error("threshold") << std::endl;
+
+
+        errors.push_mat_pred( depth_cnn_un);
+	    std::cout << "absreldiff  " << errors.get_error("abs_rel_diff") ;//<< std::endl;
+	    errors.push_mat_pred( depth_merged);
+        std::cout << "  " << errors.get_error("abs_rel_diff") << std::endl;
+        
+
+        errors.push_mat_pred( depth_cnn_un);
+        std::cout << "sqrreldiff " << errors.get_error("sqr_rel_diff");// << std::endl;
+        errors.push_mat_pred( depth_merged);
+        std::cout << "  " << errors.get_error("sqr_rel_diff")<< std::endl;
+        
+        errors.push_mat_pred( depth_cnn_un);
+	    std::cout << "rmselin " << errors.get_error("rmse_lin") ;//<< std::endl;
+	    errors.push_mat_pred( depth_merged);
+        std::cout << " " << errors.get_error("rmse_lin") << std::endl;
+     
+        errors.push_mat_pred( depth_cnn_un);
+	    std::cout << "rmselog " << errors.get_error("rmse_log");// << std::endl;
+	    errors.push_mat_pred( depth_merged);
+        std::cout << " " << errors.get_error("rmse_log") << std::endl;
+        errors.push_mat_pred( depth_cnn_un);
+
+        std::cout << "invscaleerror " << errors.get_error("rmse_log_inv");// << std::endl ;
+        errors.push_mat_pred( depth_merged);
+        std::cout << " " << errors.get_error("rmse_log_inv") << std::endl;
+        errors.push_mat_pred( depth_cnn_un);
+
 
 
 		 // if(!on_mouse)
