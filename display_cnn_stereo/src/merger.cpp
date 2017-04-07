@@ -312,8 +312,6 @@ Caffe::set_mode(Caffe::GPU);
 
 			#else
 
-	            int aaaa = 0;
-
 			#endif		 
         }
 
