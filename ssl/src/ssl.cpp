@@ -4,10 +4,11 @@ int  main(int argc, char const *argv[])
 {
 	int activeWindow = 1;
 	bool quit = false;
-	manageObjectCnn cnn;
-    manageObjectInputMap inputImage("image", cnn.getSizeInputLayer());
-	manageObjectInputMap inputDepthMap("depth", cnn.getSizeOutputLayer());
-	manageObjectInputMap inputConfidenceMap("confidence", cnn.getSizeOutputLayer());
+	manageObjectCnn solver("solver");
+	manageObjectCnn cnn("cnn");
+    manageObjectInputMap inputImage("image", solver.getSizeInputLayer());
+	manageObjectInputMap inputDepthMap("depth", solver.getSizeOutputLayer());
+	manageObjectInputMap inputConfidenceMap("confidence", solver.getSizeOutputLayer());
 	manageObjectDepthMap depthCnn;
 	manageDepthMapPerformance * performanDepthMap;
 	displayObjectDepthMap displayDepthColorMap;
@@ -28,11 +29,17 @@ int  main(int argc, char const *argv[])
 			return(0);
 		}
 
+		solver.copyInputMap2InputLayer(inputImage.getInputMapResized());
+		solver.copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap.getInputMapResized());
+		solver.forwardPassCnn();
+		solver.extractDepthMapCnn();
+
 		cnn.copyInputMap2InputLayer(inputImage.getInputMapResized());
+		cnn.copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap.getInputMapResized());
 		cnn.forwardPassCnn();
 		cnn.extractDepthMapCnn();
 
-	    depthCnn.setDepthMap(cnn.getCnnOutputMap());
+	    depthCnn.setDepthMap(solver.getCnnOutputMap());
 		depthCnn.filterPixels2BeMerged(inputConfidenceMap.getInputMapResized());
 		depthCnn.mergeDepthMap(inputDepthMap.getInputMapResized(), "facil");
 
@@ -41,7 +48,7 @@ int  main(int argc, char const *argv[])
 		performanDepthMap->setDepthMapGroundTruth(inputDepthMap.getInputMapResized());
 		performanDepthMap->setDepthMapEstimation(depthCnn.getMergedDepthMap());
 		performanDepthMap->computePerformance();
-
+		//std::cout << performanDepthMap->getLogRMSE() << std::endl;
 		inputImage.updatePath2InputMap();
 		inputDepthMap.updatePath2InputMap();
 		inputConfidenceMap.updatePath2InputMap();
@@ -56,6 +63,22 @@ int  main(int argc, char const *argv[])
 
 			case 1:
 				inputImage.displayInputMapResized();
+				displayDepthColorMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
+				displayDepthColorMap.setScaleFactor(255/10);
+				displayDepthColorMap.useColorMap(1);
+				displayDepthColorMap.displayColorMat();
+				displayDepthColorMap.setMap(inputDepthMap.getInputMapResized(), "Input Stereo Depth Map");
+				displayDepthColorMap.setScaleFactor(1);
+				displayDepthColorMap.useColorMap(1);
+				displayDepthColorMap.displayColorMat();
+				displayDepthColorMap.setMap(solver.getCnnOutputMap(), "SSL CNN Depth Map");
+				displayDepthColorMap.setScaleFactor(255);
+				displayDepthColorMap.useColorMap(1);
+				displayDepthColorMap.displayColorMat();
+				displayDepthColorMap.setMap(cnn.getCnnOutputMap(), "Original CNN Depth Map");
+				displayDepthColorMap.setScaleFactor(255);
+				displayDepthColorMap.useColorMap(1);
+				displayDepthColorMap.displayColorMat();
 				break;
 
 			case 2:
@@ -77,15 +100,17 @@ int  main(int argc, char const *argv[])
 				displayDepthColorMap.setScaleFactor(1);
 				displayDepthColorMap.useColorMap(1);
 				displayDepthColorMap.displayColorMat();
+
+			case 5:
+				displayDepthColorMap.setMap(solver.getCnnOutputMap(), "CNN Depth Map");
+				displayDepthColorMap.setScaleFactor(255);
+				displayDepthColorMap.useColorMap(1);
+				displayDepthColorMap.displayColorMat();		
 				break;
 
 			case -99:
 				quit = true;
 				break;
-
-			//case 6:
-				
-				//break;
 
 			default:
 				displayDepthColorMap.displayColorMat();

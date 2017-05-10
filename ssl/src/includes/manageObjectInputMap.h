@@ -36,8 +36,8 @@ private:
 	bool inputMapExists; 
 	std::string path2InputMap;
 	std::string inputMapType;
-	void setInputMapType(std::string inputMapType); 
 	cv::Size desiredSizeInputMap;
 	cv::Mat inputMapResized;
 	void createInputMatrixResized();
+	void setInputMapType(std::string inputMapType); 
 };

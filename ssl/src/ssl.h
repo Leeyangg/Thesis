@@ -28,14 +28,14 @@ void setActiveWindow(char pressedKey, int * activeWindow){
 			*activeWindow = 4;
 			break;
 
+		case '5':
+			cv::destroyAllWindows();
+			*activeWindow = 5;
+			break;
+
 		case 'q':
 			cv::destroyAllWindows();
 			*activeWindow = -99;
-			break;
-
-		case '6':
-			//cv::destroyAllWindows();
-			//*activeWindow = 6;
 			break;
 
 		default:
