@@ -18,7 +18,8 @@ The program receives as input a pre-trained CNN, which will be retrained online,
 - Implementing merging algorithm presented in Mancini et al.
 - Implement error functions class 
 - Generate Depth Dataset from indoor footages at TU DELFT
-- (Current State) Implementing offline/online learning strategy
+- Implementing offline learning strategy
+- Implementing SSL strategy
 
 ## Caffe models
 The CNNs models can be extracted from http://sira.diei.unipg.it/supplementary/ral2016/extra.html
