@@ -3,17 +3,26 @@
 manageObjectInputMap::manageObjectInputMap(std::string typeOfMap, cv::Size desiredInputSize){
 
 	this->setInputMapType(typeOfMap);
-	this->setPath2SourceFolderInputMap();
+	this->setPath2SourceInputMap();
 	this->setInputMapFormat();
 	this->setNumberFirstInputMap();
 	this->setPath2InputMap();
 	this->setSizeInputMap(desiredInputSize);
 	this->createInputMatrixResized();
 
+
+}
+
+ manageObjectInputMap::manageObjectInputMap(std::string typeOfMap, cv::Size desiredInputSize, manageZEDObject* zedCamObject){
+
+	this->setInputMapType(typeOfMap);
+    this->zedCamObject = zedCamObject;
+	this->setSizeInputMap(desiredInputSize);
+	this->createInputMatrixResized();
+
 }
 
 manageObjectInputMap::~manageObjectInputMap(){}
-
 
 cv::Mat manageObjectInputMap::getInputMap(){
 
@@ -27,21 +36,23 @@ cv::Mat manageObjectInputMap::getInputMapResized(){
 
 }
 
-void manageObjectInputMap::setPath2SourceFolderInputMap(){
+void manageObjectInputMap::setPath2SourceInputMap(){
 
-	if(strcmp("depth", this->inputMapType.c_str() ) == 0){
+	if(this->inputMapType == DEPTH_MAP_){
 		std::cout << "Insert path to folder with input depth map:" << std::endl;
-		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/2/depths/gt/";
+		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/nyu1_2/train_gt/labels/";
+		//this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/5/depths/gt/";
 	}
 
-	else if(strcmp("image", this->inputMapType.c_str()) == 0){
+	else if(this->inputMapType == IMAGE_MAP_){
 		std::cout << "Insert path to folder with input image:" << std::endl;
-		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/2/images/left/";
+		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/nyu1_2/train/labels/";
+		//this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/5/images/left/";
 	}
 
-	else if(strcmp("confidence", this->inputMapType.c_str()) == 0){
+	else if(this->inputMapType == CONFIDENCE_MAP_){
 		std::cout << "Insert path to folder with confidence map:" << std::endl;
-		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/2/depths/confidence/";
+		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/5/depths/confidence/";
 	}
 
 	//std::cin.sync();
@@ -55,23 +66,15 @@ void manageObjectInputMap::setInputMapFormat(){
 	std::cout << "Insert Image format:"<< std::endl;
 	//std::cin.sync();
 	//std::cin >> this->inputMapFormat;
-	this->inputMapFormat = "20000_f";
+	this->inputMapFormat = "";
 }
 
 void manageObjectInputMap::setNumberFirstInputMap(){
 
-	std::string userInput;
-	std::cin.sync();
 	std::cout << "Insert number of first frame:"<< std::endl;
 	//std::cin >>  userInput;
 	//this->numberCurrentInputMap = stoi(userInput);
 	this->numberCurrentInputMap = 2;
-
-}
-
-void manageObjectInputMap::readInputMap(){
-
-	this->inputMap = cv::imread(this->path2InputMap, 1);
 
 }
 
@@ -94,44 +97,68 @@ std::string manageObjectInputMap::getPath2InputMap(){
 
 void manageObjectInputMap::displayInputMap(){
 
-	if(strcmp("image", inputMapType.c_str()) == 0)
+	if(this->inputMapType == IMAGE_MAP_ || this->inputMapType == ZED_CAM_MAP_)
 		cv::imshow("Input Image", this->getInputMap());
 
-	else if(strcmp("depth", inputMapType.c_str()) == 0)
+	else if(this->inputMapType == DEPTH_MAP_ || this->inputMapType == ZED_DEPTH_MAP_ )
 		cv::imshow("Input Depth Map", this->getInputMap());		
 
-	else if(strcmp("confidence", inputMapType.c_str()) == 0)
-		cv::imshow("Confidence Depth Map", this->getInputMap());		
+	else if(this->inputMapType == CONFIDENCE_MAP_ || this->inputMapType == ZED_CONFIDENCE_MAP_ )
+		cv::imshow("Confidence Depth Map", this->getInputMap());	
+
+	
 }
 
 
 void manageObjectInputMap::displayInputMapResized(){
 
-	if(strcmp("image", inputMapType.c_str()) == 0)
+	if(this->inputMapType == IMAGE_MAP_ || this->inputMapType == ZED_CAM_MAP_ )
 		cv::imshow("Input Image", this->getInputMapResized());
 
-	else if(strcmp("depth", inputMapType.c_str()) == 0)
+	else if(this->inputMapType == DEPTH_MAP_ || this->inputMapType == ZED_DEPTH_MAP_  )
 		cv::imshow("Input Depth Map", this->getInputMapResized());		
 
-	else if(strcmp("confidence", inputMapType.c_str()) == 0)
+	else if(this->inputMapType == CONFIDENCE_MAP_ || this->inputMapType == ZED_CONFIDENCE_MAP_ )
 		cv::imshow("Confidence Depth Map", this->getInputMapResized());		
+	
 }
 
 void manageObjectInputMap::setPath2InputMap(){
 
 	this->path2InputMap = this->path2SourceFolderInputMap + this->inputMapFormat + std::to_string(this->numberCurrentInputMap) + ".png";
-};
 
-void manageObjectInputMap::updatePath2InputMap(){
+}
 
-	this->numberCurrentInputMap++;
-	this->setPath2InputMap();
+void manageObjectInputMap::updateInputMap(){
+
+
+	if( (this->inputMapType != ZED_CAM_MAP_) && (this->inputMapType != ZED_CONFIDENCE_MAP_) && (this->inputMapType != ZED_DEPTH_MAP_) ){	
+		this->numberCurrentInputMap++;
+		this->setPath2InputMap();
+	}
 
 }
 
 void manageObjectInputMap::setInputMapType(std::string inputMapType){
 
-	this->inputMapType = inputMapType;
+	if(strcmp("image", inputMapType.c_str()) == 0)
+		this->inputMapType = IMAGE_MAP_;
+
+	else if(strcmp("depth", inputMapType.c_str()) == 0)
+		this->inputMapType = DEPTH_MAP_;		
+
+	else if(strcmp("confidence", inputMapType.c_str()) == 0)
+		this->inputMapType = CONFIDENCE_MAP_;	
+
+	else if(strcmp("zed_confidence", inputMapType.c_str()) == 0)
+		this->inputMapType = ZED_CONFIDENCE_MAP_;	
+
+	else if(strcmp("zed", inputMapType.c_str()) == 0)
+		this->inputMapType = ZED_CAM_MAP_;	
+
+	else if(strcmp("zed_depth", inputMapType.c_str()) == 0)
+		this->inputMapType = ZED_DEPTH_MAP_;	
+
 
 }
 
@@ -145,10 +172,10 @@ void manageObjectInputMap::setSizeInputMap(cv::Size desiredInputSize){
 
 void manageObjectInputMap::createInputMatrixResized(){
 
-	if(strcmp("image", inputMapType.c_str()) == 0)
+	if(this->inputMapType == IMAGE_MAP_ || this->inputMapType == ZED_CAM_MAP_)
 		(this->inputMapResized).create( (this->desiredSizeInputMap).height, (this->desiredSizeInputMap).width, CV_32FC3);
 
-	else if(strcmp("depth", inputMapType.c_str()) == 0)
+	else 
 		(this->inputMapResized).create( (this->desiredSizeInputMap).height, (this->desiredSizeInputMap).width, CV_32FC1);
 
 }
@@ -159,5 +186,22 @@ void manageObjectInputMap::resizeInputMap(){
 
 }
 
+void manageObjectInputMap::readInputMap(){
 
+	if(this->inputMapType == ZED_CAM_MAP_)
+		this->zedCamObject->getImage().copyTo(this->inputMap);
 
+	else if(this->inputMapType == ZED_CONFIDENCE_MAP_)
+		this->zedCamObject->getConfidenceMap().copyTo(this->inputMap);	
+
+	else if(this->inputMapType == ZED_DEPTH_MAP_){
+		this->zedCamObject->getDepthMap().copyTo(this->inputMap);	
+}
+
+	else if(this->inputMapType == IMAGE_MAP_)
+		this->inputMap = cv::imread(this->path2InputMap, 1 ); 
+
+	else{
+			this->inputMap = cv::imread(this->path2InputMap, 0 ); 
+		}
+}

@@ -29,11 +29,11 @@ manageObjectCnn::manageObjectCnn(std::string typeOfNet){
 	this->setPointerToCnnOutputData();
 	this->setPointerToGroundTruthInputData();		
 	this->allocateCnnDepthMap();
+	this->setScaleDepthMap(1.0);
 
 }
 
 manageObjectCnn::~manageObjectCnn(){}
-
 
 void manageObjectCnn::setTypeOfNet(std::string typeOfNet){
 
@@ -46,19 +46,18 @@ void manageObjectCnn::setTypeOfNet(std::string typeOfNet){
 }
 
 void manageObjectCnn::forwardPassCnn(){
-
-	if(this->typeOfNet == SOLVER_)
+	if(this->typeOfNet == SOLVER_){
 		this->solver->Step(1);
+	}
 
 	else
 		this->cnn->Forward();
-
 }
 
 void manageObjectCnn::setPathToProtoFile(){
 
 	std::cout << "Insert path to protofile:" << std::endl;
-	this->path2ProtoFile = "/home/diogo/Desktop/Thesis/ssl/nets/eigenSSL.prototxt";
+	this->path2ProtoFile = "../nets/eigenSSL.prototxt";
 	//std::cin.sync();
 	//std::cin >> this->path2ProtoFile;
 }
@@ -74,7 +73,7 @@ void manageObjectCnn::setPathToSolverFile(){
 void manageObjectCnn::setPathToCaffemodel(){
 
 	std::cout << "Insert path to Caffemodel:"<< std::endl;
-	this->path2Caffemodel = "/home/diogo/Desktop/Thesis/ssl/nets/trainedNet.caffemodel";
+	this->path2Caffemodel = "../nets/trainedNet.caffemodel";
 	//std::cin.sync();
 	//std::cin >> this->path2Caffemodel;
 
@@ -198,17 +197,15 @@ void manageObjectCnn::copyInputMap2InputLayer( cv::Mat inputMap ){
 	std::vector<cv::Mat> inputMapInSeparateChannels;
 	inputMap.convertTo(inputMap, CV_32FC3);
 
-	for (int currentChannel2 = 0 ; currentChannel2 < 	this->numberChannelInputImage; ++currentChannel2) {
-        cv::Mat channel2(this->inputLayerSize.height,this->inputLayerSize.width, CV_32FC1, this->pointerToSolverCnnInputMap );
-        inputMapInSeparateChannels.push_back(channel2);
-        this->pointerToSolverCnnInputMap += this->inputLayerSize.width * this->inputLayerSize.height;
+	for (int currentChannel = 0 ; currentChannel < 	this->numberChannelInputImage; ++currentChannel) {
+        cv::Mat channel(this->inputLayerSize.height,this->inputLayerSize.width, CV_32FC1, this->pointerToCnnInputMap );
+        inputMapInSeparateChannels.push_back(channel);
+        this->pointerToCnnInputMap += this->inputLayerSize.width * this->inputLayerSize.height;
     }
 
 	cv::split(inputMap, inputMapInSeparateChannels);
-    //CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->input_blobs()[0]->cpu_data()) << "Input channels are not wrapping the input layer of the network.";
+   // CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->input_blobs()[0]->cpu_data()) << "Input channels are not wrapping the input layer of the network.";
 	this->setPointerToCnnInputData();
-	
-
 }
 
 
@@ -219,13 +216,14 @@ void manageObjectCnn::copyGroundTruthInputMap2GroundTruthInputLayer( cv::Mat inp
 	inputMap.convertTo(inputMap, CV_32FC1);
 
 	for (int currentChannel2 = 0 ; currentChannel2 < numberChannelInputImage ; ++currentChannel2) {
-        cv::Mat channel2(this->outputLayerSize.height,this->outputLayerSize.width, CV_32FC1, this->pointerToSolverGroundTruthInputMap );
+        cv::Mat channel2(this->outputLayerSize.height,this->outputLayerSize.width, CV_32FC1, this->pointerToGroundTruthInputMap );
         inputMapInSeparateChannels.push_back(channel2);
-        this->pointerToSolverGroundTruthInputMap += this->outputLayerSize.width * this->outputLayerSize.height;
+        this->pointerToGroundTruthInputMap += this->outputLayerSize.width * this->outputLayerSize.height;
     }
 
 	cv::split(inputMap, inputMapInSeparateChannels);
     //CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->blob_by_name("groundTruthData")->cpu_data() ) << "Input channels are not wrapping the input layer of the network.";
+
 	this->setPointerToGroundTruthInputData();
 
 }
@@ -240,32 +238,27 @@ cv::Mat manageObjectCnn::getCnnOutputMap(){
 void manageObjectCnn::setPointerToCnnOutputData(){
 
 	if(this->typeOfNet == SOLVER_)
-		this->pointerToCnnOutputMap = (this->solver)->net()->blob_by_name("fine_depth")->cpu_data();
+		this->pointerToCnnOutputMap = (this->solver)->net()->blob_by_name("fine_depth")->mutable_cpu_data();
 
 	else
-		this->pointerToCnnOutputMap = (this->cnn)->blob_by_name("fine_depth")->cpu_data();
+		this->pointerToCnnOutputMap = (this->cnn)->blob_by_name("fine_depth")->mutable_cpu_data();
 
 }
 
 void manageObjectCnn::setPointerToCnnInputData(){
 
-	if(this->typeOfNet == SOLVER_)
-		this->pointerToSolverCnnInputMap = this->blobImageInputLayer->mutable_cpu_data();
-
-	else
-		this->pointerToSolverCnnInputMap = this->blobImageInputLayer->mutable_cpu_data();
-
-
+		this->pointerToCnnInputMap = this->blobImageInputLayer->mutable_cpu_data();
 }
 
 void manageObjectCnn::setPointerToGroundTruthInputData(){
 
-	if(this->typeOfNet == SOLVER_)
-		this->pointerToSolverGroundTruthInputMap =  (this->solver)->net()->blob_by_name("groundTruthData")->mutable_cpu_data();
+	if(this->typeOfNet == SOLVER_){
+		this->pointerToGroundTruthInputMap =  (this->solver)->net()->blob_by_name("groundTruthData")->mutable_cpu_data();
+	}
 
-	else
-		this->pointerToSolverGroundTruthInputMap =  (this->cnn)->blob_by_name("groundTruthData")->mutable_cpu_data();
-
+	else{
+		this->pointerToGroundTruthInputMap =  (this->cnn)->blob_by_name("groundTruthData")->mutable_cpu_data();
+	}
 
 }
 
@@ -290,6 +283,7 @@ void manageObjectCnn::extractDepthMapCnn(){
 		currentPointerToMemorySource = currentPointerToMemorySource + this->outputLayerSize.width;
 
 	}
+
 }
 
 void manageObjectCnn::setNumberOfInputChannels(){
@@ -302,4 +296,42 @@ void manageObjectCnn::setNumberOfInputChannels(){
 			this->numberChannelInputImage = ((this->cnn)->input_blobs()[0])->shape(1);
 	}
 
+}
+
+void manageObjectCnn::setScaleDepthMap(float scale){
+
+	this->depthScale = scale;
+
+}
+
+void manageObjectCnn::computeMeanDepthMap(){
+
+	int counterPositiveSamples=0;
+	float sumOfDepths = 0.0;
+
+	for(int currentRow = 0; currentRow < this->outputLayerSize.height;currentRow++){
+
+		for(int currentCol =0;currentCol<this->outputLayerSize.width;currentCol++){
+
+			if(this->cnnDepthMap.at<float>(currentRow,currentCol) > 0.0){
+				counterPositiveSamples++;
+				sumOfDepths = sumOfDepths + this->cnnDepthMap.at<float>(currentRow,currentCol);
+			}
+		}
+	}
+	this->meanDepthMap = sumOfDepths/counterPositiveSamples*this->depthScale;
+	std::cout << counterPositiveSamples << std::endl;
+
+}
+
+void manageObjectCnn::replaceNegativeDepths(){
+	for(int currentRow = 0; currentRow < this->outputLayerSize.height;currentRow++){
+
+		for(int currentCol =0;currentCol<this->outputLayerSize.width;currentCol++){
+
+			if(this->cnnDepthMap.at<float>(currentRow,currentCol) < 0.0)
+				this->cnnDepthMap.at<float>(currentRow,currentCol) = this->meanDepthMap/this->depthScale;
+				
+		}
+	}
 }

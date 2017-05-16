@@ -23,9 +23,12 @@ public:
 	void copyInputMap2InputLayer(cv::Mat inputMap);
 	void copyGroundTruthInputMap2GroundTruthInputLayer(cv::Mat inputMap);
 	void forwardPassCnn();
-	cv::Mat getCnnOutputMap();
 	void extractDepthMapCnn();
 	void setOutputLayer(std::string outputLayerNamer);
+	cv::Mat getCnnOutputMap();
+	void setScaleDepthMap(float scale);
+	void computeMeanDepthMap();
+	void replaceNegativeDepths();
 
 private:
 
@@ -37,15 +40,17 @@ private:
 	cv::Size outputLayerSize;
 	const float* pointerToCnnOutputMap;
 	float* pointerToCnnInputMap;
-	float* pointerToSolverCnnInputMap;
 	float* pointerToGroundTruthInputMap;
-	float* pointerToSolverGroundTruthInputMap;
 	cv::Mat cnnDepthMap;
 	boost::shared_ptr<caffe::Blob<float>> blobImageInputLayer;
 	boost::shared_ptr<caffe::Blob<float>> blobOutputLayer;
 	boost::shared_ptr<caffe::Blob<float>> blobGroundTruthLayer;
+	caffe::SolverParameter solver_param;
+    boost::shared_ptr<caffe::Solver<float>> solver;	 
+    float meanDepthMap;
 	int typeOfNet;
 	int numberChannelInputImage;
+	float depthScale;
 	void setParametersCnn();
 	void setPathToProtoFile();
 	void setPathToSolverFile();
@@ -63,8 +68,7 @@ private:
 	void setNumberOfInputChannels();
 	void setOutputLayer();
 	void setImageInputLayer();
-    caffe::SolverParameter solver_param;
-    boost::shared_ptr<caffe::Solver<float> > solver;	 
+
 
 };
 

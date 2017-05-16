@@ -4,41 +4,19 @@
 #include "manageObjectDepthMap.h"
 #include "manageDepthMapPerformance.h"
 
-void setActiveWindow(char pressedKey, int * activeWindow){
+//C includes
+#include <iostream>
+#include <fstream>
+#include <thread>
+#include <mutex>
 
-	switch(pressedKey){
+#define NYUDataset 0
+#define MyDataset 1
 
-		case '1':
-		    cv::destroyAllWindows();
-			*activeWindow = 1;
-			break;
+void grabFrameZed(manageZEDObject* zedCamObject);
+void setupStart(int choice);
 
-		case '2':
-			cv::destroyAllWindows();
-			*activeWindow = 2;
-			break;
-
-		case '3':
-			cv::destroyAllWindows();
-			*activeWindow = 3;
-			break;
-
-		case '4':
-			cv::destroyAllWindows();
-			*activeWindow = 4;
-			break;
-
-		case '5':
-			cv::destroyAllWindows();
-			*activeWindow = 5;
-			break;
-
-		case 'q':
-			cv::destroyAllWindows();
-			*activeWindow = -99;
-			break;
-
-		default:
-			break;
-	}
-}
+float scaleInputDepthMap;
+float scaleOriginalCnnMap;
+float scaleSSLCnnMap;
+bool mergeFromConfidenceMap;

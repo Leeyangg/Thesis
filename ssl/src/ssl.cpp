@@ -1,130 +1,156 @@
 #include "ssl.h"
 
+void grabFrameZed(manageZEDObject* zedCamObject){
+
+	for(;;){
+		zedCamObject->grabFrame();
+		cv::imshow("Input Image",zedCamObject->getImage() );
+		cv::waitKey(5);
+	}
+}
+
+void setupStart(int choice){
+
+	if(choice == NYUDataset){
+		scaleInputDepthMap = 6.0/255.0;
+		scaleOriginalCnnMap = 10.0;
+		scaleSSLCnnMap= 6.0;
+		mergeFromConfidenceMap = false;
+	}
+
+	else if(choice == MyDataset){
+		scaleInputDepthMap = 10.0/255.0;
+		scaleOriginalCnnMap = 10.0;
+		scaleSSLCnnMap =10.0;
+		mergeFromConfidenceMap = true;
+
+	}
+}
+
+
 int  main(int argc, char const *argv[])
 {
+	caffe::Caffe::set_mode(caffe::Caffe::CPU);
 	int activeWindow = 1;
 	bool quit = false;
+	std::ofstream costsFile;
+	costsFile.open("costs.txt");
+	//costsFile << "Original_CNN  SSL_CNN" << std::endl;
+
+	//setupStart(MyDataset);
+	setupStart(NYUDataset);
+
 	manageObjectCnn solver("solver");
 	manageObjectCnn cnn("cnn");
     manageObjectInputMap inputImage("image", solver.getSizeInputLayer());
 	manageObjectInputMap inputDepthMap("depth", solver.getSizeOutputLayer());
 	manageObjectInputMap inputConfidenceMap("confidence", solver.getSizeOutputLayer());
 	manageObjectDepthMap depthCnn;
-	manageDepthMapPerformance * performanDepthMap;
+	manageDepthMapPerformance * performanOriginalCnnMap;
+	manageDepthMapPerformance * performanCnnMap;
+	manageDepthMapPerformance * performanceMergedMap;
 	displayObjectDepthMap displayDepthColorMap;
+	displayObjectDepthMap displayDepthCnnColorMap;
+	displayObjectDepthMap displayDepthOriginalCnnColorMap;
 
 	for(;;){
 
 		inputImage.readInputMap();
 		inputImage.resizeInputMap();
+		
+		if(mergeFromConfidenceMap){
+			inputConfidenceMap.readInputMap();
+			inputConfidenceMap.resizeInputMap();
+		}
 
 		inputDepthMap.readInputMap();
-		inputDepthMap.resizeInputMap();
-
-		inputConfidenceMap.readInputMap();
-		inputConfidenceMap.resizeInputMap();
-
-		if(!inputImage.testInputMapExists() || !inputDepthMap.testInputMapExists() ){
-			std::cout << "Map not found. Leaving..." << std::endl;
-			return(0);
-		}
+		inputDepthMap.resizeInputMap();	
 
 		solver.copyInputMap2InputLayer(inputImage.getInputMapResized());
 		solver.copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap.getInputMapResized());
 		solver.forwardPassCnn();
 		solver.extractDepthMapCnn();
+		solver.setScaleDepthMap(scaleSSLCnnMap);
+		solver.computeMeanDepthMap();
+		solver.replaceNegativeDepths();
 
-		cnn.copyInputMap2InputLayer(inputImage.getInputMapResized());
+     	cnn.copyInputMap2InputLayer(inputImage.getInputMapResized());
 		cnn.copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap.getInputMapResized());
-		cnn.forwardPassCnn();
+	    cnn.forwardPassCnn();
 		cnn.extractDepthMapCnn();
+		cnn.setScaleDepthMap(scaleOriginalCnnMap);
+		cnn.computeMeanDepthMap();
+		cnn.replaceNegativeDepths();
 
 	    depthCnn.setDepthMap(solver.getCnnOutputMap());
-		depthCnn.filterPixels2BeMerged(inputConfidenceMap.getInputMapResized());
-		depthCnn.mergeDepthMap(inputDepthMap.getInputMapResized(), "facil");
+	    depthCnn.setThresholdFilter(30);
 
-		performanDepthMap = new manageDepthMapPerformance;
+	    if(mergeFromConfidenceMap)
+			depthCnn.filterPixels2BeMerged(inputConfidenceMap.getInputMapResized());
 
-		performanDepthMap->setDepthMapGroundTruth(inputDepthMap.getInputMapResized());
-		performanDepthMap->setDepthMapEstimation(depthCnn.getMergedDepthMap());
-		performanDepthMap->computePerformance();
-		//std::cout << performanDepthMap->getLogRMSE() << std::endl;
-		inputImage.updatePath2InputMap();
-		inputDepthMap.updatePath2InputMap();
-		inputConfidenceMap.updatePath2InputMap();
+		else
+			depthCnn.filterPixels2BeMerged();
+
+		depthCnn.mergeDepthMap(inputDepthMap.getInputMapResized(), "facil", scaleInputDepthMap, scaleSSLCnnMap);
 		depthCnn.refreshPixels2BeMerged();
 
-		char pressedKey;
-		pressedKey = cv::waitKey(40);	
+		performanOriginalCnnMap = new manageDepthMapPerformance;
+		performanOriginalCnnMap->setDepthMapGroundTruth(inputDepthMap.getInputMapResized());
+		performanOriginalCnnMap->setDepthMapEstimation(cnn.getCnnOutputMap());
+		performanOriginalCnnMap->setScaleDepthMap(scaleOriginalCnnMap);
+		performanOriginalCnnMap->setScaleGroundTruth(scaleInputDepthMap);
+		performanOriginalCnnMap->computePerformance();
+		std::cout << "Error original CNN: " <<  performanOriginalCnnMap->getLinearRMSE() << std::endl;
 
-		setActiveWindow(pressedKey, &activeWindow);
+		performanCnnMap = new manageDepthMapPerformance;
+		performanCnnMap->setDepthMapGroundTruth(inputDepthMap.getInputMapResized());
+		performanCnnMap->setDepthMapEstimation(solver.getCnnOutputMap());
+		performanCnnMap->setScaleDepthMap(scaleSSLCnnMap);
+		performanCnnMap->setScaleGroundTruth(scaleInputDepthMap);
+		performanCnnMap->computePerformance();
+		std::cout << "Error SSL CNN: " << performanCnnMap->getLinearRMSE() << std::endl;
 
-		switch(activeWindow){
+		performanceMergedMap = new manageDepthMapPerformance;
+		performanceMergedMap->setDepthMapGroundTruth(inputDepthMap.getInputMapResized());
+		performanceMergedMap->setDepthMapEstimation(depthCnn.getMergedDepthMap());
+		performanceMergedMap->setScaleDepthMap(1.0);
+		performanceMergedMap->setScaleGroundTruth(scaleInputDepthMap);
+		performanceMergedMap->computePerformance();
+		std::cout << "Error merged map " << performanceMergedMap->getLinearRMSE() << std::endl;
 
-			case 1:
-				inputImage.displayInputMapResized();
-				displayDepthColorMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
-				displayDepthColorMap.setScaleFactor(255/10);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
-				displayDepthColorMap.setMap(inputDepthMap.getInputMapResized(), "Input Stereo Depth Map");
-				displayDepthColorMap.setScaleFactor(1);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
-				displayDepthColorMap.setMap(solver.getCnnOutputMap(), "SSL CNN Depth Map");
-				displayDepthColorMap.setScaleFactor(255);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
-				displayDepthColorMap.setMap(cnn.getCnnOutputMap(), "Original CNN Depth Map");
-				displayDepthColorMap.setScaleFactor(255);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
-				break;
+		costsFile << performanOriginalCnnMap->getLinearRMSE() << " "  << performanCnnMap->getLinearRMSE()  << " " << performanceMergedMap->getLinearRMSE() << std::endl;
 
-			case 2:
-				displayDepthColorMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
-				displayDepthColorMap.setScaleFactor(255/10);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
-				break;
 
-			case 3:
-				displayDepthColorMap.setMap(inputConfidenceMap.getInputMapResized(), "Confidence Stereo Depth Map");
-				displayDepthColorMap.setScaleFactor(1);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
-				break;
+		displayDepthColorMap.setMap(inputDepthMap.getInputMap(), "Input Stereo Depth Map");				
+		displayDepthColorMap.setScaleFactor(1.0);
+		displayDepthColorMap.useColorMap(1);
+		displayDepthColorMap.displayColorMat();
+	    displayDepthCnnColorMap.setMap(solver.getCnnOutputMap(), "SSL CNN Depth Map");
+		displayDepthCnnColorMap.setScaleFactor(255.0);
+		displayDepthCnnColorMap.useColorMap(1);
+		displayDepthCnnColorMap.displayColorMat();
+		displayDepthOriginalCnnColorMap.setMap(cnn.getCnnOutputMap(), "Original CNN Depth Map");
+		displayDepthOriginalCnnColorMap.setScaleFactor(255.0);
+		displayDepthOriginalCnnColorMap.useColorMap(1);
+		displayDepthOriginalCnnColorMap.displayColorMat();
+		displayDepthOriginalCnnColorMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
+		displayDepthOriginalCnnColorMap.setScaleFactor(255.0/scaleSSLCnnMap);
+		displayDepthOriginalCnnColorMap.useColorMap(1);
+		displayDepthOriginalCnnColorMap.displayColorMat();
+		inputImage.displayInputMapResized();
 
-			case 4:
-				displayDepthColorMap.setMap(inputDepthMap.getInputMapResized(), "Input Stereo Depth Map");
-				displayDepthColorMap.setScaleFactor(1);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();
+		cv::waitKey(30);
 
-			case 5:
-				displayDepthColorMap.setMap(solver.getCnnOutputMap(), "CNN Depth Map");
-				displayDepthColorMap.setScaleFactor(255);
-				displayDepthColorMap.useColorMap(1);
-				displayDepthColorMap.displayColorMat();		
-				break;
+		inputImage.updateInputMap();
+		inputDepthMap.updateInputMap();
 
-			case -99:
-				quit = true;
-				break;
-
-			default:
-				displayDepthColorMap.displayColorMat();
-				break;
-		}
-	
-		delete performanDepthMap;
-
-		if(quit)
-			break;
+		if(mergeFromConfidenceMap)
+			inputConfidenceMap.updateInputMap();
 
 	}
 
-	std::cout << "Leaving..." << std::endl;
+	std::cout << "Leaving SSL..." << std::endl;
+	costsFile.close();
 
 	return 0;
 

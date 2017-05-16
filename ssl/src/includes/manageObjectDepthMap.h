@@ -10,8 +10,9 @@ public:
 	manageObjectDepthMap();
 	~manageObjectDepthMap();
 	cv::Mat getMergedDepthMap();
-	void mergeDepthMap(cv::Mat map2MergeWith, std::string method);
+	void mergeDepthMap(cv::Mat map2MergeWith, std::string method,  float scaleInputDepthMap, float scaleSSLCnnMap);
 	void filterPixels2BeMerged(cv::Mat referenceMap);
+	void filterPixels2BeMerged();
 	void setThresholdFilter(int threshold);
 	int  getThresholdFilter();
 	void refreshPixels2BeMerged();
@@ -21,8 +22,9 @@ private:
 	cv::Mat mergedDepthMap;
 	cv::Mat depthMap;
 	std::vector<cv::Point_<int>> pixels2BeMerged;
-	int thresholdFilter = 30;
+	int thresholdFilter;
 	facilMergeAlgorithm  merger;
+	float scale;
 
 };
 

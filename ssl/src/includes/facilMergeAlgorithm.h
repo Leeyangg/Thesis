@@ -17,8 +17,8 @@ class facilMergeAlgorithm
  	void setSigma2(int newSigma);
  	void setSigma3(int newSigma);
  	std::vector<cv::Point_<int>> pixels2BeMerged;
- 	void setScaleMonoDepthMap(int newScale);
- 	void setScaleStereoDepthMap(int newScale);
+ 	void setScaleMonoDepthMap(float newScale);
+ 	void setScaleStereoDepthMap(float newScale);
 
  private:
 
@@ -30,7 +30,7 @@ class facilMergeAlgorithm
  	float sigma1 = 15.0;
  	float sigma2 = 0.1;
  	float sigma3 = 1*exp(-3);
- 	float scaleMonoDepthMap = 10;
+ 	float scaleMonoDepthMap = 6;
  	float scaleStereoDepthMap = 10/255;
  	void computeXDerivative();
  	void computeYDerivative();

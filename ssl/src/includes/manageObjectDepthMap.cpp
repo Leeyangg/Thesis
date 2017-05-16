@@ -1,6 +1,10 @@
 #include "manageObjectDepthMap.h"
 
-manageObjectDepthMap::manageObjectDepthMap(){}
+manageObjectDepthMap::manageObjectDepthMap(){
+
+	this->thresholdFilter = 30;	
+
+}
 manageObjectDepthMap::~manageObjectDepthMap(){}
 
 void manageObjectDepthMap::setDepthMap(cv::Mat referenceMap){
@@ -9,10 +13,10 @@ void manageObjectDepthMap::setDepthMap(cv::Mat referenceMap){
 
 }
 
-void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string method){
+void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string method, float scaleInputDepthMap, float scaleSSLCnnMap){
 
 	if(strcmp("facil", method.c_str()) == 0){
-			
+		
 		this->merger.setmonoDepthMap(this->depthMap);
 		this->merger.setstereoDepthMap(map2MergeWith);
 		this->merger.setPixels2BeMerged(this->pixels2BeMerged);
@@ -20,6 +24,8 @@ void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string meth
 		if(this->pixels2BeMerged.size() > 0)
 			this->merger.facilOriginal();
 		
+		this->merger.setScaleMonoDepthMap(scaleSSLCnnMap);
+		this->merger.setScaleStereoDepthMap(scaleInputDepthMap);
 		this->mergedDepthMap = merger.getFinalDepthMap();
 		this->merger.pixels2BeMerged.clear();
 
@@ -56,6 +62,27 @@ void manageObjectDepthMap::filterPixels2BeMerged(cv::Mat referenceMap){
 	}
 }
 
+void manageObjectDepthMap::filterPixels2BeMerged(){
+
+	int rowsInputMap = this->depthMap.rows;
+	int colsInputMap = this->depthMap.cols;
+	cv::Point_<int> addPixel2Fusion;
+
+	for(int currentRow = 0; currentRow < rowsInputMap; currentRow++){
+		for(int currentCol = 0; currentCol < colsInputMap; currentCol++){
+
+			if( remainder(currentRow,4)==0 && remainder(currentCol,4)==0){
+
+				addPixel2Fusion.x = currentCol;
+				addPixel2Fusion.y = currentRow;
+				(this->pixels2BeMerged).push_back(addPixel2Fusion);
+
+			}
+		}
+	}
+}
+
+
 void manageObjectDepthMap::setThresholdFilter(int threshold){
 
 	this->thresholdFilter = threshold;
@@ -82,7 +109,7 @@ displayObjectDepthMap::displayObjectDepthMap(){
 	this->mapResolution.height = 160;
 	this->mapResolution.width = 256;
 	this->colorMap.create(this->mapResolution, CV_32FC3);
-	this->scaleFactor = 1/10;
+	this->scaleFactor = 1;
 
 }
 
@@ -118,7 +145,8 @@ void displayObjectDepthMap::displayColorMat(){
 
 void displayObjectDepthMap::useColorMap(int choiceMap){
 
-	 cv::convertScaleAbs(this->map, this->map, this->scaleFactor);
+	cv::convertScaleAbs(this->map, this->map, this->scaleFactor);
+	
 
 	switch (choiceMap){
 		case 1:
@@ -130,7 +158,7 @@ void displayObjectDepthMap::useColorMap(int choiceMap){
 			break;
 
 		default:
-			applyColorMap(this->map, this->colorMap,  cv::COLORMAP_RAINBOW);
+			this->map.copyTo(this->colorMap);
 			break;
 	}
 }

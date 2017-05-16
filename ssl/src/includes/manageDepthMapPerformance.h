@@ -19,10 +19,14 @@ public:
 	float getLogRMSE();
 	float getScaleInvariantError();
 	void setThresholdErrorThreshold(float threshold);
+	void setScaleDepthMap(float scale);
+	void setScaleGroundTruth(float scale);
 
 private:
 	cv::Mat groundTruthMap;
 	cv::Mat estimationMap;
+	float scaleDepthMap;
+	float scaleGroundTruth;
 	float thresholdError ;
 	float absoluteRelativeError;
 	float squaredRelativeError;

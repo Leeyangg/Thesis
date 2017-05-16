@@ -8,6 +8,7 @@ facilMergeAlgorithm::~facilMergeAlgorithm(){}
 void facilMergeAlgorithm::facilOriginal(){
 
     this->stereoDepthMap.convertTo(this->stereoDepthMap, CV_32FC1);
+    this->monoDepthMap.convertTo(this->monoDepthMap, CV_32FC1);
 	this->finalDepthMap.create(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
 
 	float averageDepthMono = 0.0;
@@ -21,8 +22,8 @@ void facilMergeAlgorithm::facilOriginal(){
 		for (int currentCol = 0; currentCol < colsInputMap; ++currentCol)
 		{
 
-			this->stereoDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*10.0/255;
-			this->monoDepthMap.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol)*10;
+			this->stereoDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*this->scaleStereoDepthMap;
+			this->monoDepthMap.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol)*this->scaleMonoDepthMap;
 			averageDepthMono = this->monoDepthMap.at<float>(currentRow, currentCol) + averageDepthMono;
 
 		}
@@ -48,7 +49,6 @@ void facilMergeAlgorithm::facilOriginal(){
 		}
 	
 	}
-
 	mergedDepthMap.copyTo(this->finalDepthMap);
 
 }
@@ -195,13 +195,13 @@ void facilMergeAlgorithm::setSigma3(int newSigma){
 	
 }
 
-void facilMergeAlgorithm::setScaleMonoDepthMap(int newScale){
+void facilMergeAlgorithm::setScaleMonoDepthMap(float newScale){
 
 	this->scaleMonoDepthMap = newScale;
 
 }
 
-void facilMergeAlgorithm::setScaleStereoDepthMap(int newScale){
+void facilMergeAlgorithm::setScaleStereoDepthMap(float newScale){
 
 	this->scaleStereoDepthMap = newScale;
 

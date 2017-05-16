@@ -10,6 +10,8 @@ manageDepthMapPerformance::manageDepthMapPerformance(){
 	this->logRMSE = 0.0;
 	this->scaleInvariantError = 0.0;
 	this->thresholdErrorThreshold = 1.25;
+	this->scaleDepthMap = 1.0;
+	this->scaleGroundTruth = 1.0;
 }
 
 
@@ -29,6 +31,15 @@ void manageDepthMapPerformance::setDepthMapEstimation(cv::Mat estimationMap){
 
 }
 
+void manageDepthMapPerformance::setScaleDepthMap(float scale){
+	this->scaleDepthMap = scale;
+}
+
+void manageDepthMapPerformance::setScaleGroundTruth(float scale){
+	this->scaleGroundTruth = scale;
+}
+
+
 
 void manageDepthMapPerformance::computePerformance(){
 
@@ -40,25 +51,24 @@ void manageDepthMapPerformance::computePerformance(){
 		for (int currentCol = 0; currentCol < colsInputMap; ++currentCol)
 		{
 
-			this->currentPixelGroundTruth = this->groundTruthMap.at<float>(currentRow, currentCol)*10.0/255;
-			this->currentPixelPrediction  = this->estimationMap.at<float>(currentRow, currentCol);
+			this->currentPixelGroundTruth = this->groundTruthMap.at<float>(currentRow, currentCol)*this->scaleGroundTruth;
+			this->currentPixelPrediction  = this->estimationMap.at<float>(currentRow, currentCol)*this->scaleDepthMap;
 
-			if(this->currentPixelGroundTruth > 0 && this->currentPixelPrediction > 0){
-				this->thresholdError          = this->thresholdError + this->computeThresholdError();
-				this->absoluteRelativeError   = this->absoluteRelativeError +  this->computeAbsoluteRelativeError();
-				this->squaredRelativeError    = this->squaredRelativeError + this->computeSquaredRelativeError();
-				this->linearRMSE              = this->linearRMSE + this->computeLinearRMSE();
-				this->logRMSE                 = this->logRMSE +  this->computeLogRMSE();
-				this->computeScaleInvariantError();
-			}
+			this->thresholdError          = this->thresholdError + this->computeThresholdError();
+			this->absoluteRelativeError   = this->absoluteRelativeError +  this->computeAbsoluteRelativeError();
+			this->squaredRelativeError    = this->squaredRelativeError + this->computeSquaredRelativeError();
+			this->linearRMSE              = this->linearRMSE + this->computeLinearRMSE();
+			this->logRMSE                 = this->logRMSE +  this->computeLogRMSE();
+			this->computeScaleInvariantError();
+			
 		}
 	}
 
 	this->thresholdError          = this->thresholdError/(rowsInputMap*colsInputMap);
 	this->absoluteRelativeError   = this->absoluteRelativeError/(rowsInputMap*colsInputMap);
 	this->squaredRelativeError    = this->squaredRelativeError/(rowsInputMap*colsInputMap);
-	this->linearRMSE              = this->linearRMSE/(rowsInputMap*colsInputMap);
-	this->logRMSE                 = this->logRMSE/(rowsInputMap*colsInputMap);
+	this->linearRMSE              = sqrt(this->linearRMSE/(rowsInputMap*colsInputMap));
+	this->logRMSE                 = sqrt(this->logRMSE/(rowsInputMap*colsInputMap));
 	this->scaleInvariantError     = (this->scaleInvariantErrorStruct.partial1)/(rowsInputMap*colsInputMap) - 0.5*( pow(this->scaleInvariantErrorStruct.partial2,2)) / (pow(rowsInputMap*colsInputMap,2));
 
 }
