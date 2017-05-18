@@ -71,7 +71,7 @@ void manageObjectDepthMap::filterPixels2BeMerged(){
 	for(int currentRow = 0; currentRow < rowsInputMap; currentRow++){
 		for(int currentCol = 0; currentCol < colsInputMap; currentCol++){
 
-			if( remainder(currentRow,4)==0 && remainder(currentCol,4)==0){
+			if( remainder(currentRow,8)==0 && remainder(currentCol,8)==0){
 
 				addPixel2Fusion.x = currentCol;
 				addPixel2Fusion.y = currentRow;

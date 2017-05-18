@@ -74,7 +74,7 @@ void manageObjectInputMap::setNumberFirstInputMap(){
 	std::cout << "Insert number of first frame:"<< std::endl;
 	//std::cin >>  userInput;
 	//this->numberCurrentInputMap = stoi(userInput);
-	this->numberCurrentInputMap = 2;
+	this->numberCurrentInputMap = 1;
 
 }
 

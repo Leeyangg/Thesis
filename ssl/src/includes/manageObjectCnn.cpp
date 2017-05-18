@@ -46,9 +46,11 @@ void manageObjectCnn::setTypeOfNet(std::string typeOfNet){
 }
 
 void manageObjectCnn::forwardPassCnn(){
+	std::vector<boost::shared_ptr<caffe::Blob<float>>> jj;
 	if(this->typeOfNet == SOLVER_){
 		this->solver->Step(1);
 	}
+
 
 	else
 		this->cnn->Forward();
@@ -238,10 +240,10 @@ cv::Mat manageObjectCnn::getCnnOutputMap(){
 void manageObjectCnn::setPointerToCnnOutputData(){
 
 	if(this->typeOfNet == SOLVER_)
-		this->pointerToCnnOutputMap = (this->solver)->net()->blob_by_name("fine_depth")->mutable_cpu_data();
+		this->pointerToCnnOutputMap = (this->solver)->net()->blob_by_name("cnnDepth")->mutable_cpu_data();
 
 	else
-		this->pointerToCnnOutputMap = (this->cnn)->blob_by_name("fine_depth")->mutable_cpu_data();
+		this->pointerToCnnOutputMap = (this->cnn)->blob_by_name("cnnDepth")->mutable_cpu_data();
 
 }
 
@@ -320,8 +322,7 @@ void manageObjectCnn::computeMeanDepthMap(){
 		}
 	}
 	this->meanDepthMap = sumOfDepths/counterPositiveSamples*this->depthScale;
-	std::cout << counterPositiveSamples << std::endl;
-
+	//std::cout << counterPositiveSamples << std::endl;
 }
 
 void manageObjectCnn::replaceNegativeDepths(){
