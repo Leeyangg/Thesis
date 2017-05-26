@@ -280,31 +280,14 @@
 	"buffers":
 	[
 		{
-			"file": "ssl.h",
+			"contents": "import { Component } from '@angular/core';\nimport{AngularFire,FirebaseListObservable} from 'angularfire2'\n\n@Component({\n  selector: 'page-hello-ionic',\n  templateUrl: 'hello-ionic.html',\n})\nexport class HelloIonicPage {\n\n}\n\n",
+			"file": "/home/diogo/Desktop/myfitnessapp/src/pages/hello-ionic/hello-ionic.ts",
+			"file_size": 224,
+			"file_write_time": 131397615115796155,
 			"settings":
 			{
-				"buffer_size": 1272,
+				"buffer_size": 224,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "ssl.cpp",
-			"settings":
-			{
-				"buffer_size": 7031,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "#include \"stereo.h\"\n\n\nmanageStereoAlgorithm::manageStereoAlgorithm(){}\nmanageStereoAlgorithm::~manageStereoAlgorithm(){}\n\nvoid manageStereoAlgorithm::runSparseMatching(){\n  \n\tint vertical_block_size = 5; // vertical size of SAD-window\n\tint horizontal_block_size = 5; // horizontal size of SAD-window\n\tint GRADIENT_THRESHOLD = 5; // defines if image gradient indicates sufficient texture\n\tint PKRN_THRESHOLD = 200; // defines if best match is significantly better than second best match [in % to deal with fixed point (120 means a difference of 20%)]\n\tint MATCHING_THRESHOLD = 0; // 40 TODO: should be depending on vertical_block_size and horizontal_block_size\n\n\tint half_vertical_block_size = (vertical_block_size - 1)/2;\n\tint half_horizontal_block_size = (horizontal_block_size - 1)/2;\n\tstd::vector< int > disparity_distribution;\n\tuint disparity_min, disparity_max;\n\tint disparity_range;\n\n\t\t_width = imageSize.width;\n\t\t_height = imageSize.height;\n\t\t_height2 = _height/2;\n\n\t// empty the disparity distribution:\n\tfor (int i = 0; i < disparity_distribution.size(); i++)\n\t{\n\t\tdisparity_distribution.at(i) = 0;\n\t}\n\t\n   \n\tdisparity_max =  disparity_range - disparity_min - 1;\t// set disparity_range = 16;\n\n\tcv::Size imageSize(40,64) ;\n\n\tcvSet(&disparity_map,cvScalar(0,0,0));\n\tcvSet(&disparity_map_show, cvScalar(0, 0, 0));\n\n\tuint diff_left;\n\tuint diff_mid;\n\tuint diff_right;\n\tuint sum_abs_diff[50];\n\tuint SAD_list[100];\n\tuint min1;\n\tuint min1_d;\n\tuint min2;\n\tuint min2_d;\n\tint p1;\n\tint p2;\n\n\tuint n_points = 0;\n\n\t// loop over all image lines (excluding borders)\n\tfor ( uint l = half_vertical_block_size; l < _height2 - half_vertical_block_size; l++ ) \n\t{\n\t\t// start by computing first two gradient terms for this image line (taking into account borders)\n\t\tp1 = bw.data[((l*2)*_width) + half_horizontal_block_size+disparity_max-1];\n\t\tp2 = bw.data[((l*2)*_width) + half_horizontal_block_size+disparity_max];\n\t\tdiff_left = std::abs( p1-p2 );\n\t\tdiff_mid =  abs((int) bw.data[((l*2)*_width) + half_horizontal_block_size+disparity_max] - bw.data[((l*2)*_width) + half_horizontal_block_size+disparity_max + 1] );\n\n\t\t// loop over image line (excluding borders)\n\t\tfor (uint p = half_horizontal_block_size+disparity_max; p < _width-half_horizontal_block_size ; p++)\n\t\t{\n\t\t\t// compute the third image gradient \n\t\t\tdiff_right = abs( bw.data[((l*2)*_width) + p + 1] - bw.data[((l*2)*_width) + p + 2] );\n\n\t\t\t// now check if the gradient for this pixel p (diff_mid) is a local peak (higher than diff_left and diff_right) and exceeds minimum-threshold\n\t\t\tif ( diff_mid > diff_left     &&     diff_mid > diff_right     &&     diff_mid > GRADIENT_THRESHOLD )\n\t\t\t{\n\t\t\t\tmin1 = 10000;\n\t\t\t\tmin2 = 10000;\n\n\t\t\t\t// perform SAD calculation for pixel p \n\t\t\t\tfor ( uint d = 0; d < disparity_range; d++ )\n\t\t\t\t{\n\t\t\t\t\tsum_abs_diff[d] = 0;\n\t\t\t\t\tfor (uint x = p - half_horizontal_block_size; x < p + half_horizontal_block_size; x++)\n\t\t\t\t\t{\n\t\t\t\t\t\tfor (uint y = l - half_vertical_block_size; y < l + half_vertical_block_size; y++)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tsum_abs_diff[d] += abs( bw.data[((y*2)*_width) + x + d] - bw.data[((y*2+1)*_width) + x] ); // even lines (y*2) are left image lines, odd lines (y*2+1) are right image lines\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\n\t\t\t\t\t// keep track of minimum cost (+ corresponding index)\n\t\t\t\t\tif ( sum_abs_diff[d] < min1 )\n\t\t\t\t\t{\t\t\t\t\n\t\t\t\t\t\tmin1_d = d;\n\t\t\t\t\t\tmin1 = sum_abs_diff[d];\n\t\t\t\t\t}\t\n\t\t\t\t\t\n\t\t\t\t}\n\n\t\t\t\tfor ( uint d = 0; d < disparity_range; d++ )\n\t\t\t\t{\n\t\t\t\t\tif ( sum_abs_diff[d] < min2 )\n\t\t\t\t\t{\n\t\t\t\t\t\tif ( (d != min1_d-1) && (d != min1_d) && (d != min1_d+1) )\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tmin2 = sum_abs_diff[d];\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\n\n\n\t\t\t\t// check if the ratio between first and second minimum cost exceeds minimum ratio \n\t\t\t\tif (min2 * 100 / (min1 + 1) > PKRN_THRESHOLD && min2 > MATCHING_THRESHOLD)\n\t\t\t\t{\n\n\t\t\t\t\tbool sub_p = false;\n\t\t\t\t\tint h21, h31;\n\t\t\t\t\tint d1,d2,d3;\n\t\t\t\t\t\n\t\t\t\t\t// perform subpixel calculation\n\t\t\t\t\tif ( min1_d > 0 && min1_d < disparity_max )\n\t\t\t\t\t{\n\t\t\t\t\t\td1 = min1_d - 1;\n\t\t\t\t\t\td2 = min1_d;\n\t\t\t\t\t\td3 = min1_d + 1;\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tint y1 = sum_abs_diff[d1];\n\t\t\t\t\t\tint y2 = sum_abs_diff[d2];\n\t\t\t\t\t\tint y3 = sum_abs_diff[d3];\n\n\t\t\t\t\t\th31 = (y3 - y1);\n\t\t\t\t\t\th21 = (y2 - y1) * 4;\n\n\t\t\t\t\t\tsub_p = true;\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\tif (MAKE_DISPARITY_DISTRIBUTION)\n\t\t\t\t\t{\n\t\t\t\t\t\t// make a histogram:\n\t\t\t\t\t\tfloat sp;\n\t\t\t\t\t\tif (sub_p)\n\t\t\t\t\t\t\tsp = ((float)(h21 - h31) * 10.0f) / (float)(h21 - (h31 * 2)) / 10.0f + (float)d1;\t\t\t\t\t\t\t\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tsp = (float) min1_d;\n\t\t\t\t\t\tfloat sp_round = roundf(sp);\n\t\t\t\t\t\tint ind = (int)sp_round;\n\t\t\t\t\t\tif (ind >= 0 && ind < disparity_distribution.size()) disparity_distribution.at(ind) += 1;\n\t\t\t\t\t}\n\t\t\t\n\t\t\t\t\tint sub_disp;\n\t\t\t\t\t\n\t\t\t\t\tif (sub_p)\n\t\t\t\t\t{\n\t\t\t\t\t\tsub_disp = (((h21 - h31) * disparity_scale * 10) / (h21 - (h31 * 2)) / 10) + (d1 * disparity_scale);\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t{\n\t\t\t\t\t\tsub_disp = min1_d * disparity_scale;\n\t\t\t\t\t}\n\n\t\t\t\t\t// put the disparity in the map if it supercedes the threshold:\n\t\t\t\t\tif (sub_disp >= min_disparity_threshold*disparity_scale)\n\t\t\t\t\t{\n\t\t\t\t\t\tdisparity_map.data[(l)*_width + p] = sub_disp;\n\t\t\t\t\t\tn_points++;\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\t// top off the disparity and make the scale more linear for showing it in the colored map\n\t\t\t\t\t// if (sub_disp > 10 * disparity_scale) sub_disp = 10 * disparity_scale;\n\t\t\t\t\t\n\t\t\t\t\tif (sub_disp >= min_disparity_threshold*disparity_scale)\n\t\t\t\t\t{\n\t\t\t\t\t\tif (sub_disp > disparity_scale)\n\t\t\t\t\t\t\tsub_disp = (int)(255 * (log((float)sub_disp / (float)disparity_scale) / log((float)(disparity_range))));\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tsub_disp = 0;\n\n\t\t\t\t\t\tfloat amount_of_red = ((float)sub_disp) / 255.0f;\n\t\t\t\t\t\t// float amount_of_red = ((float)sub_disp) / ((float)disparity_range * disparity_scale);\n\t\t\t\t\t\tfloat amount_of_blue = 1.0f - amount_of_red;\n\t\t\t\t\t\tuint8_t color[3] = { (uint8_t)(amount_of_blue * 255.0f), 0,  (uint8_t)(amount_of_red * 255.0f) };\n\t\t\t\t\t\tfor (unsigned int c = 0; c < 3; c++)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t((&disparity_map_show)->data + l*(&disparity_map_show)->cols)[p * (disparity_map_show.channels()) + c] = color[c];\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tdiff_left = diff_mid;\n\t\t\tdiff_mid = diff_right;\n\t\t}\n\t}\n}\n",
-			"file": "includes/stereo.cpp",
-			"file_size": 5966,
-			"file_write_time": 131396739364234661,
-			"settings":
-			{
-				"buffer_size": 6050,
 				"line_ending": "Unix"
 			}
 		}
@@ -342,12 +325,22 @@
 	},
 	"expanded_folders":
 	[
-		"/home/diogo/Desktop/Thesis/ssl",
-		"/home/diogo/Desktop/Thesis/ssl/src",
-		"/home/diogo/Desktop/Thesis/ssl/src/includes"
+		"/home/diogo/Desktop/myfitnessapp",
+		"/home/diogo/Desktop/myfitnessapp/node_modules/angularfire2",
+		"/home/diogo/Desktop/myfitnessapp/src",
+		"/home/diogo/Desktop/myfitnessapp/src/app",
+		"/home/diogo/Desktop/myfitnessapp/src/pages"
 	],
 	"file_history":
 	[
+		"/home/diogo/Desktop/myfitnessapp/src/pages/hello-ionic/hello-ionic.html",
+		"/home/diogo/Desktop/myfitnessapp/package.json",
+		"/home/diogo/Desktop/myfitnessapp/src/app/app.module.ts",
+		"/home/diogo/Desktop/myfitnessapp/src/app/services/posts.service.ts",
+		"/home/diogo/Desktop/myfitnessapp/src/pages/hello-ionic/hello-ionic.ts",
+		"/home/diogo/Desktop/Thesis/ssl/src/includes/stereo.cpp",
+		"/home/diogo/Desktop/Thesis/ssl/src/ssl.cpp",
+		"/home/diogo/Desktop/Thesis/ssl/src/ssl.h",
 		"/home/diogo/Desktop/Thesis/ssl/CMakeLists.txt",
 		"/home/diogo/Desktop/opencv_contrib/modules/stereo/samples/sample.cpp",
 		"/home/diogo/Desktop/Thesis/ssl/src/includes/manageObjectCnn.cpp",
@@ -357,8 +350,6 @@
 		"/home/diogo/Desktop/opencv_contrib/modules/stereo/perf/perf_main.cpp",
 		"/home/diogo/caffe/src/caffe/solver.cpp",
 		"/home/diogo/Desktop/Thesis/ssl/src/includes/manageObjectDepthMap.cpp",
-		"/home/diogo/Desktop/Thesis/ssl/src/ssl.h",
-		"/home/diogo/Desktop/Thesis/ssl/src/ssl.cpp",
 		"/home/diogo/Desktop/Thesis/ssl/src/includes/manageObjectInputMap.cpp",
 		"/home/diogo/Desktop/Thesis/ssl/src/includes/manageObjectDepthMap.h",
 		"/home/diogo/Desktop/Thesis/ssl/src/includes/manageObjectCnn.h",
@@ -507,6 +498,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Http",
 			"round",
 			"imageData",
 			"disparity_max",
@@ -661,87 +653,29 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "ssl.h",
+					"file": "/home/diogo/Desktop/myfitnessapp/src/pages/hello-ionic/hello-ionic.ts",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1272,
+						"buffer_size": 224,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								503,
-								503
+								224,
+								224
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "ssl.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 7031,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1609,
-								1609
-							]
-						],
-						"settings":
-						{
-							"spell_check": true,
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "includes/stereo.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 6050,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								971,
-								971
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.sublime-syntax"
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -789,7 +723,7 @@
 		"height": 0.0
 	},
 	"pinned_build_system": "",
-	"project": "ssl.sublime-project",
+	"project": "myapp.sublime-project",
 	"replace":
 	{
 		"height": 64.0

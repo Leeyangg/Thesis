@@ -1,52 +1,61 @@
-      #include "ssl.h"
+#include "ssl.h"
 
-void grabFrameZed(manageZEDObject* zedCamObject){
+void setupStart(){
 
-	for(;;){
-		zedCamObject->grabFrame();
+	scaleInputDepthMap = scaleDepthMapSslJSONFile/255.0;
+	scaleSSLCnnMap= scaleDepthMapSslJSONFile;
+	scaleOriginalCnnMap = scaleDepthMapCnnNoUpdateJSONFile;
+
+	if(useCnnSslJSONFile)
+		solver = new manageObjectCnn("solver");
+
+	if(useCnnNoWeigthUpdateJSONFile)
+		cnn = new manageObjectCnn("cnn");
+		
+
+	if(useImportFromFolderJSONFile){
+		if(useStereoPairJSONFile)
+			mergeFromConfidenceMap = true;
+
+		else
+			mergeFromConfidenceMap = false;
+
+		if(useStereoPairJSONFile)
+			inputImage = new manageObjectInputMap("stereo_pair", resolutionInputMapsJSONFile);
+		else
+			inputImage = new manageObjectInputMap("image", resolutionInputMapsJSONFile);
+
+		inputDepthMap = new manageObjectInputMap("depth", resolutionOutputMapsJSONFile);
+
+		if(mergeJSONFile)
+			inputConfidenceMap = new manageObjectInputMap("confidence", resolutionOutputMapsJSONFile);
 	}
-}
 
-void setupStart(int choice){
+	else if(useZedJSONFile){
+		//if(zedSourceSdkJSONFile)
+			mergeFromConfidenceMap = true;
 
-	solver = new manageObjectCnn("solver");
-	cnn = new manageObjectCnn("cnn");
-
-	if(choice == NYUDataset){
-		scaleInputDepthMap = 6.0/255.0;
-		scaleOriginalCnnMap = 10.0;
-		scaleSSLCnnMap= 6.0;
-		mergeFromConfidenceMap = false;
-		inputImage = new manageObjectInputMap("image", solver->getSizeInputLayer());
-		inputDepthMap = new manageObjectInputMap("depth", solver->getSizeOutputLayer());
-		inputConfidenceMap = new manageObjectInputMap("confidence", solver->getSizeOutputLayer());
-	}
-
-	else if(choice == MyDataset){
-		scaleInputDepthMap = 10.0/255.0;
-		scaleOriginalCnnMap = 10.0;
-		scaleSSLCnnMap =10.0;
-		mergeFromConfidenceMap = true;
-		inputImage = new manageObjectInputMap("zed", solver->getSizeInputLayer(), zedCamObject);
-		inputDepthMap = new manageObjectInputMap("zed_depth", solver->getSizeOutputLayer(),zedCamObject);
-		inputConfidenceMap = new manageObjectInputMap("zed_confidence", solver->getSizeOutputLayer(),zedCamObject);
-	}
-
-	else if(choice == ZED){
-		scaleInputDepthMap = 10.0/255.0;
-		scaleOriginalCnnMap = 10.0;
-		scaleSSLCnnMap =10.0;
-		mergeFromConfidenceMap = true;
 		zedCamObject = new manageZEDObject;
-		inputImage = new manageObjectInputMap("zed", solver->getSizeInputLayer(), zedCamObject);
-		inputDepthMap = new manageObjectInputMap("zed_depth", solver->getSizeOutputLayer(),zedCamObject);
-		inputConfidenceMap = new manageObjectInputMap("zed_confidence", solver->getSizeOutputLayer(),zedCamObject);
-		std::thread release(grabFrameZed, zedCamObject);
+		inputImage = new manageObjectInputMap("zed", resolutionInputMapsJSONFile, zedCamObject);
+		inputDepthMap = new manageObjectInputMap("zed_depth", resolutionOutputMapsJSONFile,zedCamObject);
+		inputConfidenceMap = new manageObjectInputMap("zed_confidence", resolutionOutputMapsJSONFile,zedCamObject);
+		thresholdConfidence = 70;
 	}
-
-	thresholdConfidence = 30;
-
 }
+
+extern  bool useZedJSONFile;
+extern  bool zedSourceOpenCvJSONFile;
+extern  bool zedSourceSdkJSONFile;
+extern  bool useImportFromFolderJSONFile;
+extern  bool useStereoPairJSONFile;
+extern  bool useCnnNoWeigthUpdateJSONFile;
+extern  bool useCnnSslJSONFile;
+extern  float scaleDepthMapSslJSONFile;
+extern  float scaleDepthMapCnnNoUpdateJSONFile;
+extern  cv::Size resolutionInputMapsJSONFile;
+extern  cv::Size resolutionOutputMapsJSONFile;
+extern  bool mergeJSONFile;
+extern bool stereoOpenCVJSONFile;
 
 int  main(int argc, char const *argv[])
 {
@@ -55,124 +64,155 @@ int  main(int argc, char const *argv[])
 	bool quit = false;
 	std::ofstream costsFile;
 	costsFile.open("costs.txt");
-	
-	if(argc == 2)
-		setupStart(atoi(argv[1]));
-
-	else{
-		std::cout << "Please image source" << std::endl;
-		return(0);
-	}
+	cv::Mat inputImageCnn;
+	cv::Mat depthGT;
+	cv::Mat depthMapToBeMerged;
+	cv::Mat depthStereoOpenCv;
+	cv::Mat leftImage;
+	cv::Mat rightImage;
+	config::loadVariablesFromJson();
+	setupStart();
 
 	for(;;){
 
-		inputImage->readInputMap();
-		inputImage->resizeInputMap();
+		if(useZedJSONFile){
+			zedCamObject->grabFrame();
+		
+			if(zedSourceOpenCvJSONFile){
+				zedCamObject->getLeftImage(false).copyTo(leftImage);
+				zedCamObject->getRightImage(false).copyTo(rightImage);
+				cv::imshow("Original left image", leftImage );
+			}
+
+//			if(zedSourceSdkJSONFile){
 
 
-		if(mergeFromConfidenceMap){
-			inputConfidenceMap->readInputMap();
-			inputConfidenceMap->resizeInputMap();
+//			}
+
+			cv::resize(zedCamObject->getImage(), inputImageCnn, resolutionInputMapsJSONFile);
 		}
 
-		inputDepthMap->readInputMap();
-		inputDepthMap->resizeInputMap();	
+		if(useImportFromFolderJSONFile){
+
+			inputImage->readInputMap();
+			inputImage->resizeInputMap();
+			inputImage->getInputMapResized().copyTo(inputImageCnn);
+
+			if(mergeFromConfidenceMap){
+				inputConfidenceMap->readInputMap();
+				inputConfidenceMap->resizeInputMap();
+			}
+
+			inputDepthMap->readInputMap();
+			inputDepthMap->resizeInputMap();
+			inputDepthMap->getInputMapResized().copyTo(depthGT);	
+			inputImage->updateInputMap();
+			inputDepthMap->updateInputMap();
+			inputImage->displayInputMapResized();
+			displayDepthColorMap.setMap(inputDepthMap->getInputMap(), "Input Stereo Depth Map");	
+			displayDepthColorMap.setScaleFactor(1.0);
+			displayDepthColorMap.useColorMap(1);
+			displayDepthColorMap.displayColorMat();
+
+			if(useStereoPairJSONFile){
+				inputImage->getInputMapResized().copyTo(leftImage);
+				inputImage->getRightMapResized().copyTo(rightImage);
+			}
+
+		}
+
+		if(stereoOpenCVJSONFile){
+			bmAlgorithm.setResolution(resolutionOutputMapsJSONFile);
+			bmAlgorithm.setScaleDepthMap(700.262*0.120);
+
+			bmAlgorithm.setLeftImage(leftImage);
+			bmAlgorithm.setRightImage(rightImage);
+			bmAlgorithm.computeDisparityMap();
+			bmAlgorithm.computeAbsoluteDepthMap();
+			bmAlgorithm.getAbsoluteDepthMapResized().copyTo(depthStereoOpenCv);
+			displayDepthOriginalCnnColorMap.setMap(depthStereoOpenCv, "Depth OpenCVBM");
+			displayDepthOriginalCnnColorMap.setScaleFactor(255.0/6.0);
+			displayDepthOriginalCnnColorMap.useColorMap(1);
+			displayDepthOriginalCnnColorMap.displayColorMat();
+		}
 
 
-		cv::Mat noiseMatrix(solver->getSizeOutputLayer(), CV_32FC1);
-		cv::Mat inputMm(solver->getSizeOutputLayer(), CV_32FC1);
-		cv::randn(noiseMatrix,0,10);
-		inputDepthMap->getInputMapResized().convertTo(inputMm,CV_32FC1);
-		//noiseMatrix = noiseMatrix.mul(inputMm);
-		cv::add(noiseMatrix,inputMm,noiseMatrix);
-		
 
-		solver->copyInputMap2InputLayer(inputImage->getInputMapResized());
-		//solver->copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap->getInputMapResized());
-		solver->copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap->getInputMapResized());
-		solver->forwardPassCnn();
-		solver->extractDepthMapCnn();
-		solver->setScaleDepthMap(scaleSSLCnnMap);
-		solver->computeMeanDepthMap();
-		solver->replaceNegativeDepths();
+		if(useCnnNoWeigthUpdateJSONFile){
+	     	cnn->copyInputMap2InputLayer(inputImageCnn);
+		    cnn->forwardPassCnn();
+			cnn->extractDepthMapCnn();
+			cnn->setScaleDepthMap(scaleOriginalCnnMap);
+			cnn->computeMeanDepthMap();
+			cnn->replaceNegativeDepths();
+			cnn->getCnnOutputMap().copyTo(depthMapToBeMerged);
+			displayDepthOriginalCnnColorMap.setMap(cnn->getCnnOutputMap(), "Original CNN Depth Map");
+			displayDepthOriginalCnnColorMap.setScaleFactor(255.0);
+			displayDepthOriginalCnnColorMap.useColorMap(1);
+			displayDepthOriginalCnnColorMap.displayColorMat();
+			performanOriginalCnnMap = new manageDepthMapPerformance;
+			performanOriginalCnnMap->setDepthMapGroundTruth(depthGT);
+			performanOriginalCnnMap->setDepthMapEstimation(cnn->getCnnOutputMap());
+			performanOriginalCnnMap->setScaleDepthMap(scaleOriginalCnnMap);
+			performanOriginalCnnMap->setScaleGroundTruth(scaleInputDepthMap);
+			performanOriginalCnnMap->computePerformance();
+			costsFile << performanOriginalCnnMap->getLinearRMSE() << " ";
+		}
 
-     	cnn->copyInputMap2InputLayer(inputImage->getInputMapResized());
-		cnn->copyGroundTruthInputMap2GroundTruthInputLayer(inputDepthMap->getInputMapResized());
-	    cnn->forwardPassCnn();
-		cnn->extractDepthMapCnn();
-		cnn->setScaleDepthMap(scaleOriginalCnnMap);
-		cnn->computeMeanDepthMap();
-		cnn->replaceNegativeDepths();
+		if(useCnnSslJSONFile){
+			solver->copyInputMap2InputLayer(inputImageCnn);
+			solver->copyGroundTruthInputMap2GroundTruthInputLayer(depthGT);
+			solver->setScaleDepthMap(scaleSSLCnnMap);
+			solver->forwardPassCnn();
+			solver->extractDepthMapCnn();
+			solver->computeMeanDepthMap();
+			solver->replaceNegativeDepths();
+			solver->getCnnOutputMap().copyTo(depthMapToBeMerged);
+		    displayDepthCnnColorMap.setMap(solver->getCnnOutputMap(), "SSL CNN Depth Map");
+			displayDepthCnnColorMap.setScaleFactor(255.0);
+			displayDepthCnnColorMap.useColorMap(1);
+			displayDepthCnnColorMap.displayColorMat();
+			performanCnnMap = new manageDepthMapPerformance;
+			performanCnnMap->setDepthMapGroundTruth(depthGT);
+			performanCnnMap->setDepthMapEstimation(solver->getCnnOutputMap());
+			performanCnnMap->setScaleDepthMap(scaleSSLCnnMap);
+			performanCnnMap->setScaleGroundTruth(scaleInputDepthMap);
+			performanCnnMap->computePerformance();
+			costsFile << performanCnnMap->getLinearRMSE() << " ";
+		}
 
-	    depthCnn.setDepthMap(solver->getCnnOutputMap());
-	    depthCnn.setThresholdFilter(thresholdConfidence);
+		if(mergeJSONFile){
 
-	    if(mergeFromConfidenceMap)
-			depthCnn.filterPixels2BeMerged(inputConfidenceMap->getInputMapResized());
+		    depthCnn.setDepthMap(depthMapToBeMerged);
+		    depthCnn.setThresholdFilter(thresholdConfidence);
 
-		else
-			depthCnn.filterPixels2BeMerged();
+		    if(mergeFromConfidenceMap){
+				depthCnn.filterPixels2BeMerged(depthStereoOpenCv);
+				inputConfidenceMap->updateInputMap();
+				//inputConfidenceMap->displayInputMapResized();
+			}
 
-		depthCnn.mergeDepthMap(inputDepthMap->getInputMapResized(), "facil", scaleInputDepthMap, scaleSSLCnnMap);
-		depthCnn.refreshPixels2BeMerged();
+			else
+				depthCnn.filterPixels2BeMerged();
 
-		performanOriginalCnnMap = new manageDepthMapPerformance;
-		performanOriginalCnnMap->setDepthMapGroundTruth(inputDepthMap->getInputMapResized());
-		performanOriginalCnnMap->setDepthMapEstimation(cnn->getCnnOutputMap());
-		performanOriginalCnnMap->setScaleDepthMap(scaleOriginalCnnMap);
-		performanOriginalCnnMap->setScaleGroundTruth(scaleInputDepthMap);
-		performanOriginalCnnMap->computePerformance();
-		//std::cout << "Error original CNN: " <<  performanOriginalCnnMap->getLinearRMSE() << std::endl;
+			depthCnn.mergeDepthMap(depthStereoOpenCv, "facil", 1.0, scaleSSLCnnMap);
+			depthCnn.refreshPixels2BeMerged();
+			displayDepthOriginalCnnColorMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
+			displayDepthOriginalCnnColorMap.setScaleFactor(255.0/scaleSSLCnnMap);
+			displayDepthOriginalCnnColorMap.useColorMap(1);
+			displayDepthOriginalCnnColorMap.displayColorMat();
+			performanceMergedMap = new manageDepthMapPerformance;
+			performanceMergedMap->setDepthMapGroundTruth(inputDepthMap->getInputMapResized());
+			performanceMergedMap->setDepthMapEstimation(depthCnn.getMergedDepthMap());
+			performanceMergedMap->setScaleDepthMap(1.0);
+			performanceMergedMap->setScaleGroundTruth(scaleInputDepthMap);
+			performanceMergedMap->computePerformance();
+			costsFile <<  performanceMergedMap->getLinearRMSE(); 
+		}
 
-		performanCnnMap = new manageDepthMapPerformance;
-		performanCnnMap->setDepthMapGroundTruth(inputDepthMap->getInputMapResized());
-		performanCnnMap->setDepthMapEstimation(solver->getCnnOutputMap());
-		performanCnnMap->setScaleDepthMap(scaleSSLCnnMap);
-		performanCnnMap->setScaleGroundTruth(scaleInputDepthMap);
-		performanCnnMap->computePerformance();
-		//std::cout << "Error SSL CNN: " << performanCnnMap->getLinearRMSE() << std::endl;
+		    costsFile << std::endl;
 
-		performanceMergedMap = new manageDepthMapPerformance;
-		performanceMergedMap->setDepthMapGroundTruth(inputDepthMap->getInputMapResized());
-		performanceMergedMap->setDepthMapEstimation(depthCnn.getMergedDepthMap());
-		performanceMergedMap->setScaleDepthMap(1.0);
-		performanceMergedMap->setScaleGroundTruth(scaleInputDepthMap);
-		performanceMergedMap->computePerformance();
-		//std::cout << "Error merged map " << performanceMergedMap->getLinearRMSE() << std::endl;
-
-		costsFile << performanOriginalCnnMap->getLinearRMSE() << " "  << performanCnnMap->getLinearRMSE()  << " " << performanceMergedMap->getLinearRMSE() << std::endl;
-
-
-		displayDepthColorMap.setMap(inputDepthMap->getInputMap(), "Input Stereo Depth Map");	
-		displayDepthColorMap.setScaleFactor(1.0);
-		displayDepthColorMap.useColorMap(1);
-		displayDepthColorMap.displayColorMat();
-	    displayDepthCnnColorMap.setMap(solver->getCnnOutputMap(), "SSL CNN Depth Map");
-		displayDepthCnnColorMap.setScaleFactor(255.0);
-		displayDepthCnnColorMap.useColorMap(1);
-		displayDepthCnnColorMap.displayColorMat();
-		displayDepthOriginalCnnColorMap.setMap(cnn->getCnnOutputMap(), "Original CNN Depth Map");
-		displayDepthOriginalCnnColorMap.setScaleFactor(255.0);
-		displayDepthOriginalCnnColorMap.useColorMap(1);
-		displayDepthOriginalCnnColorMap.displayColorMat();
-		displayDepthOriginalCnnColorMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
-		displayDepthOriginalCnnColorMap.setScaleFactor(255.0/scaleSSLCnnMap);
-		displayDepthOriginalCnnColorMap.useColorMap(1);
-		displayDepthOriginalCnnColorMap.displayColorMat();
-		displayNoisyDepthMap.setMap(noiseMatrix, "Noisy Depth Map");
-		displayNoisyDepthMap.setScaleFactor(1);
-		displayNoisyDepthMap.useColorMap(1);
-		displayNoisyDepthMap.displayColorMat();
-		inputImage->displayInputMapResized();
-
-		cv::waitKey(30);
-
-		inputImage->updateInputMap();
-		inputDepthMap->updateInputMap();
-
-		if(mergeFromConfidenceMap)
-			inputConfidenceMap->updateInputMap();
-
+		cv::waitKey(5);
 	}
 
 	std::cout << "Leaving SSL..." << std::endl;

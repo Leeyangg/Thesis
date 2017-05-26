@@ -92,9 +92,9 @@ float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){
 		float normalizeWeight = 0.0;
 
 		normalizeWeight =  this->normalizeWeights(allPartialWeights[currentPointFromSparse2] , minAllPartialWeights , sumOfAllPartialWeights);
-		pixelDepth = pixelDepth +  normalizeWeight*(this->stereoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y,this->pixels2BeMerged[currentPointFromSparse2].x) + monoDepthMap.at<float>(currentPixelMono.y,currentPixelMono.x) - monoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y, this->pixels2BeMerged[currentPointFromSparse2].x));
+		pixelDepth = pixelDepth +  normalizeWeight*(this->stereoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y,this->pixels2BeMerged[currentPointFromSparse2].x) + this->monoDepthMap.at<float>(currentPixelMono.y,currentPixelMono.x) - this->monoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y, this->pixels2BeMerged[currentPointFromSparse2].x));
+	
 	}
-
 	return (pixelDepth);
 }
 

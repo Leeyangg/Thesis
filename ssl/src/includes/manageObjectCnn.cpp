@@ -1,5 +1,11 @@
 #include "manageObjectCnn.h"
 
+extern  std::string pathCaffemodelCnnJSONFile;
+extern  std::string pathProtofileCnnJSONFile;
+
+extern  std::string pathCaffemodelSslCnnJSONFile;
+extern  std::string pathProtofileSslCnnJSONFile;
+extern  std::string pathSolverfileSslCnnJSONFile;
 
 manageObjectCnn::manageObjectCnn(std::string typeOfNet){
 
@@ -46,7 +52,7 @@ void manageObjectCnn::setTypeOfNet(std::string typeOfNet){
 }
 
 void manageObjectCnn::forwardPassCnn(){
-	std::vector<boost::shared_ptr<caffe::Blob<float>>> jj;
+
 	if(this->typeOfNet == SOLVER_){
 		this->solver->Step(1);
 	}
@@ -58,26 +64,25 @@ void manageObjectCnn::forwardPassCnn(){
 
 void manageObjectCnn::setPathToProtoFile(){
 
-	std::cout << "Insert path to protofile:" << std::endl;
-	this->path2ProtoFile = "../nets/eigenSSL.prototxt";
-	//std::cin.sync();
-	//std::cin >> this->path2ProtoFile;
+	if(this->typeOfNet == SOLVER_)
+		this->path2ProtoFile = pathProtofileSslCnnJSONFile;
+
+	else
+		this->path2ProtoFile = pathProtofileCnnJSONFile;
+
 }
 
 void manageObjectCnn::setPathToSolverFile(){
-
-	std::cout << "Insert path to solverfile:" << std::endl;
-	this->path2SolverFile = "../nets/solverSSL.prototxt";
-	//std::cin.sync();
-	//std::cin >> this->path2ProtoFile;
+	this->path2SolverFile = pathSolverfileSslCnnJSONFile;
 }
 
 void manageObjectCnn::setPathToCaffemodel(){
 
-	std::cout << "Insert path to Caffemodel:"<< std::endl;
-	this->path2Caffemodel = "../nets/trainedNet.caffemodel";
-	//std::cin.sync();
-	//std::cin >> this->path2Caffemodel;
+	if(this->typeOfNet == SOLVER_)
+		this->path2Caffemodel = pathCaffemodelSslCnnJSONFile;
+	
+	else
+		this->path2Caffemodel = pathCaffemodelCnnJSONFile;
 
 }
 
@@ -224,7 +229,7 @@ void manageObjectCnn::copyGroundTruthInputMap2GroundTruthInputLayer( cv::Mat inp
     }
 
 	cv::split(inputMap, inputMapInSeparateChannels);
-    //CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->blob_by_name("groundTruthData")->cpu_data() ) << "Input channels are not wrapping the input layer of the network.";
+    CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->blob_by_name("groundTruthData")->cpu_data() ) << "Input channels are not wrapping the input layer of the network.";
 
 	this->setPointerToGroundTruthInputData();
 

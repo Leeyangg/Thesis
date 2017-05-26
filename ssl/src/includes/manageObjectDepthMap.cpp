@@ -1,5 +1,7 @@
 #include "manageObjectDepthMap.h"
 
+extern  cv::Size resolutionOutputMapsJSONFile;
+
 manageObjectDepthMap::manageObjectDepthMap(){
 
 	this->thresholdFilter = 30;	
@@ -41,25 +43,25 @@ cv::Mat manageObjectDepthMap::getMergedDepthMap(){
 
 void manageObjectDepthMap::filterPixels2BeMerged(cv::Mat referenceMap){
 
-	referenceMap.convertTo(referenceMap, CV_8UC1);
-	int rowsInputMap = referenceMap.rows;
-	int colsInputMap = referenceMap.cols;
+	cv::Mat referenceMapResized;
+	cv::resize(referenceMap, referenceMapResized, resolutionOutputMapsJSONFile);
+
+	int rowsInputMap = referenceMapResized.rows;
+	int colsInputMap = referenceMapResized.cols;
 	cv::Point_<int> addPixel2Fusion;
 
 	for(int currentRow = 0; currentRow < rowsInputMap; currentRow++){
 		for(int currentCol = 0; currentCol < colsInputMap; currentCol++){
-
-			int confidenceLevel = referenceMap.data[currentRow*referenceMap.step + currentCol*referenceMap.elemSize()]; 
-
-			if(confidenceLevel < this->thresholdFilter) {
-
+			
+			//if(confidenceLevel < this->thresholdFilter) {
+			if(referenceMapResized.at<float>(currentRow, currentCol) > 0.0) {
 				addPixel2Fusion.x = currentCol;
 				addPixel2Fusion.y = currentRow;
 				(this->pixels2BeMerged).push_back(addPixel2Fusion);
-
 			}
 		}
 	}
+
 }
 
 void manageObjectDepthMap::filterPixels2BeMerged(){

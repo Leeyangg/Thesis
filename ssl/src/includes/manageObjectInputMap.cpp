@@ -1,5 +1,13 @@
 #include "manageObjectInputMap.h"
 
+extern  std::string pathLeftImageJSONFile;
+extern  std::string pathRightImageJSONFile;
+extern  std::string formatNameImagesJSONFile;
+extern  std::string sourceGt;
+extern  std::string confidencePathJSONFile;
+extern  int numberFirstFrameJSONFile;
+
+
 manageObjectInputMap::manageObjectInputMap(std::string typeOfMap, cv::Size desiredInputSize){
 
 	this->setInputMapType(typeOfMap);
@@ -36,46 +44,47 @@ cv::Mat manageObjectInputMap::getInputMapResized(){
 
 }
 
+cv::Mat manageObjectInputMap::getRightMap(){
+
+	return this->rightMap;
+
+}
+
+cv::Mat manageObjectInputMap::getRightMapResized(){
+
+	return this->rightMapResized;
+
+}
+
 void manageObjectInputMap::setPath2SourceInputMap(){
 
 	if(this->inputMapType == DEPTH_MAP_){
-		std::cout << "Insert path to folder with input depth map:" << std::endl;
-		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/nyu1_2/train_gt/labels/";
-		//this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/5/depths/gt/";
+		this->path2SourceFolderInputMap = sourceGt;
 	}
 
 	else if(this->inputMapType == IMAGE_MAP_){
-		std::cout << "Insert path to folder with input image:" << std::endl;
-		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/nyu1_2/train/labels/";
-		//this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/5/images/left/";
+		this->path2SourceFolderInputMap = pathLeftImageJSONFile;
 	}
 
 	else if(this->inputMapType == CONFIDENCE_MAP_){
-		std::cout << "Insert path to folder with confidence map:" << std::endl;
-		this->path2SourceFolderInputMap = "/home/diogo/Desktop/datasets/mine/depth_maps/5/depths/confidence/";
+		this->path2SourceFolderInputMap = confidencePathJSONFile;
 	}
 
-	//std::cin.sync();
-	//std::cin >> this->path2SourceFolderInputMap;
+	else if(this->inputMapType == STEREO_IMAGE_){
+		this->path2SourceFolderInputMap = pathLeftImageJSONFile;
+		this->path2SourceFolderRightMap = pathRightImageJSONFile;
+	}
+
 
 
 }
 
 void manageObjectInputMap::setInputMapFormat(){
-
-	std::cout << "Insert Image format:"<< std::endl;
-	//std::cin.sync();
-	//std::cin >> this->inputMapFormat;
-	this->inputMapFormat = "";
+	this->inputMapFormat = formatNameImagesJSONFile;
 }
 
 void manageObjectInputMap::setNumberFirstInputMap(){
-
-	std::cout << "Insert number of first frame:"<< std::endl;
-	//std::cin >>  userInput;
-	//this->numberCurrentInputMap = stoi(userInput);
-	this->numberCurrentInputMap = 1;
-
+	this->numberCurrentInputMap = numberFirstFrameJSONFile;
 }
 
 bool manageObjectInputMap::testInputMapExists(){
@@ -127,6 +136,10 @@ void manageObjectInputMap::setPath2InputMap(){
 
 	this->path2InputMap = this->path2SourceFolderInputMap + this->inputMapFormat + std::to_string(this->numberCurrentInputMap) + ".png";
 
+	if(this->inputMapType == STEREO_IMAGE_)
+		this->path2RightMap = this->path2SourceFolderRightMap + this->inputMapFormat + std::to_string(this->numberCurrentInputMap) + ".png";
+
+
 }
 
 void manageObjectInputMap::updateInputMap(){
@@ -159,6 +172,8 @@ void manageObjectInputMap::setInputMapType(std::string inputMapType){
 	else if(strcmp("zed_depth", inputMapType.c_str()) == 0)
 		this->inputMapType = ZED_DEPTH_MAP_;	
 
+	else if(strcmp("stereo_pair", inputMapType.c_str()) == 0)
+		this->inputMapType = STEREO_IMAGE_;	
 
 }
 
@@ -175,6 +190,11 @@ void manageObjectInputMap::createInputMatrixResized(){
 	if(this->inputMapType == IMAGE_MAP_ || this->inputMapType == ZED_CAM_MAP_)
 		(this->inputMapResized).create( (this->desiredSizeInputMap).height, (this->desiredSizeInputMap).width, CV_32FC3);
 
+	else if(this->inputMapType == STEREO_IMAGE_){
+		(this->inputMapResized).create( (this->desiredSizeInputMap).height, (this->desiredSizeInputMap).width, CV_32FC3);
+		(this->rightMapResized).create( (this->desiredSizeInputMap).height, (this->desiredSizeInputMap).width, CV_32FC3);
+	}
+
 	else 
 		(this->inputMapResized).create( (this->desiredSizeInputMap).height, (this->desiredSizeInputMap).width, CV_32FC1);
 
@@ -183,6 +203,9 @@ void manageObjectInputMap::createInputMatrixResized(){
 void manageObjectInputMap::resizeInputMap(){
 
 	cv::resize(this->inputMap, this->inputMapResized, this->desiredSizeInputMap);
+	
+	if(this->inputMapType == STEREO_IMAGE_)
+		cv::resize(this->rightMap, this->rightMapResized, this->desiredSizeInputMap);
 
 }
 
@@ -196,10 +219,15 @@ void manageObjectInputMap::readInputMap(){
 
 	else if(this->inputMapType == ZED_DEPTH_MAP_){
 		this->zedCamObject->getDepthMap().copyTo(this->inputMap);	
-}
+	}
 
 	else if(this->inputMapType == IMAGE_MAP_)
 		this->inputMap = cv::imread(this->path2InputMap, 1 ); 
+
+	else if(this->inputMapType == STEREO_IMAGE_){
+		this->inputMap = cv::imread(this->path2InputMap, 1 ); 
+		this->rightMap = cv::imread(this->path2RightMap, 1 );
+	}
 
 	else{
 			this->inputMap = cv::imread(this->path2InputMap, 0 ); 
