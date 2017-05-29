@@ -6,6 +6,17 @@ void setupStart(){
 	scaleSSLCnnMap= scaleDepthMapSslJSONFile;
 	scaleOriginalCnnMap = scaleDepthMapCnnNoUpdateJSONFile;
 
+   if(useZedJSONFile){
+		//if(zedSourceSdkJSONFile)
+			mergeFromConfidenceMap = true;
+
+		zedCamObject = new manageZEDObject;
+		inputImage = new manageObjectInputMap("zed", resolutionInputMapsJSONFile, zedCamObject);
+		inputDepthMap = new manageObjectInputMap("zed_depth", resolutionOutputMapsJSONFile,zedCamObject);
+		inputConfidenceMap = new manageObjectInputMap("zed_confidence", resolutionOutputMapsJSONFile,zedCamObject);
+		thresholdConfidence = 70;
+	}
+
 	if(useCnnSslJSONFile)
 		solver = new manageObjectCnn("solver");
 
@@ -13,7 +24,7 @@ void setupStart(){
 		cnn = new manageObjectCnn("cnn");
 		
 
-	if(useImportFromFolderJSONFile){
+  if(useImportFromFolderJSONFile){
 		if(useStereoPairJSONFile)
 			mergeFromConfidenceMap = true;
 
@@ -31,16 +42,6 @@ void setupStart(){
 			inputConfidenceMap = new manageObjectInputMap("confidence", resolutionOutputMapsJSONFile);
 	}
 
-	else if(useZedJSONFile){
-		//if(zedSourceSdkJSONFile)
-			mergeFromConfidenceMap = true;
-
-		zedCamObject = new manageZEDObject;
-		inputImage = new manageObjectInputMap("zed", resolutionInputMapsJSONFile, zedCamObject);
-		inputDepthMap = new manageObjectInputMap("zed_depth", resolutionOutputMapsJSONFile,zedCamObject);
-		inputConfidenceMap = new manageObjectInputMap("zed_confidence", resolutionOutputMapsJSONFile,zedCamObject);
-		thresholdConfidence = 70;
-	}
 }
 
 extern  bool useZedJSONFile;
@@ -70,6 +71,7 @@ int  main(int argc, char const *argv[])
 	cv::Mat depthStereoOpenCv;
 	cv::Mat leftImage;
 	cv::Mat rightImage;
+	std::vector<cv::Mat> zedImages;
 	config::loadVariablesFromJson();
 	setupStart();
 
@@ -77,19 +79,34 @@ int  main(int argc, char const *argv[])
 
 		if(useZedJSONFile){
 			zedCamObject->grabFrame();
-		
+
 			if(zedSourceOpenCvJSONFile){
 				zedCamObject->getLeftImage(false).copyTo(leftImage);
 				zedCamObject->getRightImage(false).copyTo(rightImage);
-				cv::imshow("Original left image", leftImage );
 			}
+
+			else{
+
+				zedImages = zedCamObject->getImage();
+				zedImages.at(0).copyTo(leftImage);
+				zedImages.at(1).copyTo(rightImage);
+				zedCamObject->getDepthMap().copyTo(depthGT);
+				displayDepthColorMap.setMap(depthGT, "Ground Truth Depth Map");	
+				displayDepthColorMap.setScaleFactor(1.0);
+				displayDepthColorMap.useColorMap(1);
+				displayDepthColorMap.displayColorMat();
+
+			}
+
+			leftImage.copyTo(inputImageCnn);
+			cv::imshow("Original left image", leftImage);
 
 //			if(zedSourceSdkJSONFile){
 
 
 //			}
 
-			cv::resize(zedCamObject->getImage(), inputImageCnn, resolutionInputMapsJSONFile);
+	//		cv::resize(zedCamObject->getImage(), inputImageCnn, resolutionInputMapsJSONFile);
 		}
 
 		if(useImportFromFolderJSONFile){
@@ -97,7 +114,8 @@ int  main(int argc, char const *argv[])
 			inputImage->readInputMap();
 			inputImage->resizeInputMap();
 			inputImage->getInputMapResized().copyTo(inputImageCnn);
-
+			inputImage->updateInputMap();
+/*
 			if(mergeFromConfidenceMap){
 				inputConfidenceMap->readInputMap();
 				inputConfidenceMap->resizeInputMap();
@@ -113,7 +131,7 @@ int  main(int argc, char const *argv[])
 			displayDepthColorMap.setScaleFactor(1.0);
 			displayDepthColorMap.useColorMap(1);
 			displayDepthColorMap.displayColorMat();
-
+*/
 			if(useStereoPairJSONFile){
 				inputImage->getInputMapResized().copyTo(leftImage);
 				inputImage->getRightMapResized().copyTo(rightImage);
@@ -131,7 +149,7 @@ int  main(int argc, char const *argv[])
 			bmAlgorithm.computeAbsoluteDepthMap();
 			bmAlgorithm.getAbsoluteDepthMapResized().copyTo(depthStereoOpenCv);
 			displayDepthOriginalCnnColorMap.setMap(depthStereoOpenCv, "Depth OpenCVBM");
-			displayDepthOriginalCnnColorMap.setScaleFactor(255.0/6.0);
+			displayDepthOriginalCnnColorMap.setScaleFactor(255.0/10.0);
 			displayDepthOriginalCnnColorMap.useColorMap(1);
 			displayDepthOriginalCnnColorMap.displayColorMat();
 		}
@@ -140,7 +158,7 @@ int  main(int argc, char const *argv[])
 
 		if(useCnnNoWeigthUpdateJSONFile){
 	     	cnn->copyInputMap2InputLayer(inputImageCnn);
-		    cnn->forwardPassCnn();
+		   cnn->forwardPassCnn();
 			cnn->extractDepthMapCnn();
 			cnn->setScaleDepthMap(scaleOriginalCnnMap);
 			cnn->computeMeanDepthMap();

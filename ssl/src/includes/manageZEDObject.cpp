@@ -1,21 +1,24 @@
 #include "manageZEDObject.h"
 
+extern  cv::Size resolutionInputMapsJSONFile;
+
 manageZEDObject::manageZEDObject(){
 #ifdef COMPILE_ZED
 	this->zedObject = new sl::zed::Camera(sl::zed::HD720); 	
 	this->checkZEDStart();
 	this->setMapWidth();
 	this->setMapHeight();
-    this->zedCVImage.create(this->mapHeight,this->mapWidth, CV_16UC3);
+   this->zedCVImage.create(this->mapHeight,this->mapWidth, CV_16UC3);
+   this->zedCVImage2.create(this->mapHeight,this->mapWidth, CV_16UC3);
 	this->zedCVMap.create(this->mapHeight,this->mapWidth, CV_32FC1);
 	this->scaleToConvertMapToMeters = 0.001;
 	this->setMaximumDepthDistance(10000);
 	this->maximumDepth = this->zedObject->getDepthClampValue()*this->scaleToConvertMapToMeters;
-	std::thread release(grabFrameZed, this);
+	//std::thread release(grabFrameZed, this);
+	//release.detach();
 
 #else
 	this->zedOpencv.open(1);
-
 	this->checkZEDStart();
 	this->setMapWidth();
 	this->setMapHeight();
@@ -87,10 +90,17 @@ void manageZEDObject::grabFrame(){
 
 }
 
-cv::Mat manageZEDObject::getImage(){	
+std::vector<cv::Mat> manageZEDObject::getImage(){	
+
 #ifdef COMPILE_ZED
+		std::vector<cv::Mat> imageVector;
 		sl::zed::slMat2cvMat(this->zedObject->retrieveImage(sl::zed::SIDE::LEFT)).copyTo(this->zedCVImage);
-		return(this->zedCVImage);
+		cv::resize(this->zedCVImage,this->zedCVImage,resolutionInputMapsJSONFile);
+		imageVector.push_back(this->zedCVImage);
+		sl::zed::slMat2cvMat(this->zedObject->retrieveImage(sl::zed::SIDE::RIGHT)).copyTo(this->zedCVImage2);
+		cv::resize(this->zedCVImage2,this->zedCVImage2,resolutionInputMapsJSONFile);
+		imageVector.push_back(this->zedCVImage2);
+		return(imageVector);
 #else
 		return(this->leftImage);
 #endif

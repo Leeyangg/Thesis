@@ -10,6 +10,7 @@
 // C includes
 #include <stdlib.h>
 #include <thread>
+#include <vector>
 
 class manageZEDObject
 {
@@ -17,12 +18,12 @@ public:
 	manageZEDObject();
 	~manageZEDObject();
 	void setMaximumDepthDistance(float maximumDepth);
-	cv::Mat getImage();
+	void grabFrame();
+	std::vector<cv::Mat> getImage();
 	cv::Mat getConfidenceMap();
 	cv::Mat getDepthMap();
 	cv::Mat getLeftImage(bool save);
 	cv::Mat getRightImage(bool save);
-	void grabFrame();
 	
 protected:
 
@@ -33,19 +34,20 @@ private:
 #endif
 
 	int currentFrame = 0;
-	float maximumZedDepth;
-	void checkZEDStart();
-    int mapWidth;
+   int mapWidth;
 	int mapHeight;
+	float maximumZedDepth;
 	float scaleToConvertMapToMeters;
-	float maximumDepth;
+	float maximumDepth;	
 	cv::Mat zedCVImage;
-    cv::Mat zedCVMap;
-	void setMapWidth();
-	void setMapHeight();
+	cv::Mat zedCVImage2;
+   cv::Mat zedCVMap;
 	cv::VideoCapture zedOpencv;
 	cv::Mat rightImage;
 	cv::Mat leftImage;
+	void checkZEDStart();
+	void setMapWidth();
+	void setMapHeight();
 
 };
 

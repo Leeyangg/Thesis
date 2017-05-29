@@ -211,8 +211,10 @@ void manageObjectInputMap::resizeInputMap(){
 
 void manageObjectInputMap::readInputMap(){
 
-	if(this->inputMapType == ZED_CAM_MAP_)
-		this->zedCamObject->getImage().copyTo(this->inputMap);
+	if(this->inputMapType == ZED_CAM_MAP_){
+		this->zedImages =this->zedCamObject->getImage();
+		this->zedImages.at(0).copyTo(this->inputMap);
+	}
 
 	else if(this->inputMapType == ZED_CONFIDENCE_MAP_)
 		this->zedCamObject->getConfidenceMap().copyTo(this->inputMap);	

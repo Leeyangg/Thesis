@@ -43,7 +43,6 @@ protected:
 
 private:
 
-
 	std::string path2SourceFolderInputMap;
 	std::string path2SourceFolderRightMap;
 	std::string inputMapFormat;
@@ -57,6 +56,7 @@ private:
 	cv::Mat rightMapResized;
 	cv::Mat inputMap;
 	cv::Mat rightMap;
+	std::vector<cv::Mat> zedImages;
 	manageZEDObject* zedCamObject;
 	void createInputMatrixResized();
 	void setInputMapType(std::string inputMapType); 

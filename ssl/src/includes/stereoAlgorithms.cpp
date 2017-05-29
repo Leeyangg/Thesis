@@ -1,12 +1,33 @@
 #include "stereoAlgorithms.h"
 
-stereoBMOpencv::stereoBMOpencv(){}
+stereoBMOpencv::stereoBMOpencv(){
+	this->stereoBMNDisparities = 0;
+	this->stereoBMSADWindowsSize = 7;
+	this->stereoBM = new cv::StereoBM(0,this->stereoBMNDisparities,this->stereoBMSADWindowsSize );
+}
 
 stereoBMOpencv::~stereoBMOpencv(){}
 
-void stereoBMOpencv::computeDisparityMap(){
 
-	this->stereoBM(this->leftImageGrayScale,this->rightImageGrayScale,this->disparityMap, CV_32FC1);
+void stereoBMOpencv::computeDisparityMap(){
+	this->stereoBM = new cv::StereoBM(0,this->stereoBMNDisparities,this->stereoBMSADWindowsSize );
+	(*(this->stereoBM))(this->leftImageGrayScale,this->rightImageGrayScale,this->disparityMap, CV_32FC1);
+
+	char key = cv::waitKey(10);
+
+	if(key =='q')
+		this->stereoBMSADWindowsSize = this->stereoBMSADWindowsSize + 2;
+
+	else if(key == 'w' && this->stereoBMSADWindowsSize > 5)
+		this->stereoBMSADWindowsSize = this->stereoBMSADWindowsSize - 2;
+
+	else if(key == 'a')
+		this->stereoBMNDisparities = this->stereoBMNDisparities + 16;
+
+	else if(key == 's' && this->stereoBMSADWindowsSize > 0)
+		this->stereoBMNDisparities = this->stereoBMNDisparities - 16;
+	
+
 }
 
 void stereoBMOpencv::computeAbsoluteDepthMap(){
@@ -25,7 +46,7 @@ void stereoBMOpencv::computeAbsoluteDepthMap(){
 			this->absoluteDepthMap.at<float>(row,col) = this->scaleDepthMap/this->disparityMap.at<float>(row,col);
 			
 			if(this->absoluteDepthMap.at<float>(row,col) > 10.0)
-				this->absoluteDepthMap.at<float>(row,col) = -99;	
+				this->absoluteDepthMap.at<float>(row,col) = -10.0;	
 		}
 	}
 }

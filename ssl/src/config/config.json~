@@ -21,7 +21,7 @@
 	},
 
 	"importCnnNoWeightUpdate":{
-		"use":true,
+		"use":false,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
