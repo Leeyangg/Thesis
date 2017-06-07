@@ -19,8 +19,6 @@ public:
 
 private:
 	float scaleDepthMap;
-	int stereoBMNDisparities;
-	int stereoBMSADWindowsSize;
 	cv::Size resolution;
 	cv::Mat leftImage;
 	cv::Mat leftImageGrayScale;
@@ -30,8 +28,8 @@ private:
 	cv::Mat disparityMapResized;
 	cv::Mat absoluteDepthMap;
 	cv::Mat absoluteDepthMapResized;
-	cv::StereoBM* stereoBM;
-	cv::StereoSGBM* stereoSGBM;
+	cv::StereoBM stereoBM;//(16,15);
+	cv::StereoSGBM stereoSGBM;
 };
 
 

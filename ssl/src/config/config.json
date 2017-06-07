@@ -2,26 +2,26 @@
 	"zed": {
 		"use":true,
 		"source": {
-			"opencv":false,
-			"sdk":true
+			"opencv":true,
+			"sdk":false
 		}
 	},
 
 	"importFromFolder": {
 		"use":false,
-		"stereoPair":true,
+		"stereoPair":false,
 		"source": {
-			"left":"/media/ubuntu/diogo/indoorsDepths/images/left/",
-			"right":"/media/ubuntu/diogo/indoorsDepths/images/right/",
-		    "depthGt":"/media/ubuntu/diogo/indoorsDepths/images/right/",
-		    "confidence":"/media/ubuntu/diogo/indoorsDepths/images/right/",
+			"left":"/home/diogo/Desktop/datasets/nyu1_2/train/labels/",
+			"right":"/home/diogo/Desktop/datasets/mine/depth_maps/1/images/right/",
+		    "depthGt":"/home/diogo/Desktop/datasets/nyu1_2/train_gt/labels/",
+		    "confidence":"/home/diogo/Desktop/datasets/mine/depth_maps/1/depths/confidence/",
 			"format":"",
-			"firstFrame": 9
+			"firstFrame": 2
 		}
 	},
 
 	"importCnnNoWeightUpdate":{
-		"use":true,
+		"use":false,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
@@ -29,7 +29,7 @@
 	},
 
 	"importSslCnn":{
-		"use":false,
+		"use":true,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt",
@@ -52,6 +52,6 @@
 		"scaleSslCnnMap": 10.0
 	},
 
-	"merge": true,
+	"merge": false,
 	"stereoOPenCV": true
 }
