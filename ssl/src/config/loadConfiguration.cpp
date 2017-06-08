@@ -32,6 +32,7 @@ float scaleDepthMapCnnNoUpdateJSONFile;
 
 bool mergeJSONFile;
 bool stereoOpenCVJSONFile;
+bool displayOutputsJSONFile;
 
 namespace config{
 
@@ -76,6 +77,7 @@ namespace config{
 		
 		mergeJSONFile = jsonFile["/merge"_json_pointer];
 		stereoOpenCVJSONFile = jsonFile["/stereoOPenCV"_json_pointer];
+		displayOutputsJSONFile = jsonFile["/displayMaps"_json_pointer];
 	}
 
 }

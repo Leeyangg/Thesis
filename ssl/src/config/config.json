@@ -22,6 +22,10 @@
 
 	"importCnnNoWeightUpdate":{
 		"use":true,
+		"source2":{
+			"caffemodel":"/home/ubuntu/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
+			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_deploy.prototxt"
+		},
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
@@ -29,7 +33,7 @@
 	},
 
 	"importSslCnn":{
-		"use":true,
+		"use":false,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSLSparse.prototxt",
@@ -41,10 +45,17 @@
 		"width":256,
 		"height":160
 	},
-
+	"resolutionInputMaps2":{
+		"width":298,
+		"height":218
+	},
 	"resolutionOutputMaps":{
-		"width":64,
-		"height":40
+		"width":256,
+		"height":160
+	},
+	"resolutionOutputMaps2":{
+		"width":298,
+		"height":218
 	},
 
 	"scales":{
@@ -53,5 +64,6 @@
 	},
 
 	"merge": true,
-	"stereoOPenCV": true
+	"stereoOPenCV": true,
+	"displayMaps": true
 }

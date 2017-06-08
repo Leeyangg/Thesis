@@ -40,6 +40,7 @@ displayObjectDepthMap displayDepthColorMap;
 displayObjectDepthMap displayDepthCnnColorMap;
 displayObjectDepthMap displayDepthOriginalCnnColorMap;
 displayObjectDepthMap displayDepthCnnSSLColorMap;
+displayObjectDepthMap displayDepthStereoMap;
+displayObjectDepthMap displayMergedMap;
 stereoBMOpencv bmAlgorithm;
 manageZEDObject * zedCamObject;
-

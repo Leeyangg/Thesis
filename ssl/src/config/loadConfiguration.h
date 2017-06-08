@@ -37,6 +37,7 @@ extern float scaleDepthMapCnnNoUpdateJSONFile;
 
 extern bool mergeJSONFile;
 extern bool stereoOpenCVJSONFile;
+extern bool displayOutputsJSONFile;
 
 namespace config{
 
