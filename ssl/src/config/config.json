@@ -11,12 +11,12 @@
 		"use":false,
 		"stereoPair":false,
 		"source": {
-			"left":"/home/diogo/Desktop/datasets/nyu1_2/train/labels/",
-			"right":"/home/diogo/Desktop/datasets/mine/depth_maps/1/images/right/",
+			"left":"/media/ubuntu/My Passport/indoorsDepths/images/left/",
+			"right":"/media/ubuntu/My Passport/indoorsDepths/images/right/",
 		    "depthGt":"/home/diogo/Desktop/datasets/nyu1_2/train_gt/labels/",
 		    "confidence":"/home/diogo/Desktop/datasets/mine/depth_maps/1/depths/confidence/",
 			"format":"",
-			"firstFrame": 2
+			"firstFrame": 9
 		}
 	},
 
@@ -27,7 +27,7 @@
 			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_deploy.prototxt"
 		},
 		"source":{
-			"caffemodel":"../nets/trainedNet.caffemodel",
+			"caffemodel":"/home/ubuntu/Desktop/nyu1_2/NYU_iter_1000.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
 		}
 	},
@@ -38,6 +38,11 @@
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSLSparse.prototxt",
 			"solverfile":"../nets/solverSSLSparse.prototxt"
+		},
+		"source2":{
+			"caffemodel":"/home/ubuntu/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
+			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_train.prototxt",
+			"solverfile":"/home/ubuntu/Desktop/Depth-Estimation/solver.prototxt"
 		}
 	},
 
@@ -45,17 +50,17 @@
 		"width":256,
 		"height":160
 	},
-	"resolutionInputMaps2":{
+	"resolutionInputMapsy":{
 		"width":298,
 		"height":218
 	},
 	"resolutionOutputMaps":{
-		"width":256,
-		"height":160
+		"width":64,
+		"height":40
 	},
-	"resolutionOutputMaps2":{
-		"width":298,
-		"height":218
+	"resolutionOutputMapsj":{
+		"width":74,
+		"height":54
 	},
 
 	"scales":{
@@ -63,7 +68,7 @@
 		"scaleSslCnnMap": 10.0
 	},
 
-	"merge": true,
+	"merge": false,
 	"stereoOPenCV": true,
 	"displayMaps": true
 }

@@ -156,12 +156,13 @@ void manageObjectCnn::createCnn(){
 
 void manageObjectCnn::copyWeights2Cnn(){
 
-	if(this->typeOfNet == SOLVER_)
-		this->solver->net()->CopyTrainedLayersFrom(this->path2Caffemodel);
+	if(!this->path2Caffemodel.empty()){
+		if(this->typeOfNet == SOLVER_)
+			this->solver->net()->CopyTrainedLayersFrom(this->path2Caffemodel);
 
-	else
-		this->cnn->CopyTrainedLayersFrom(this->path2Caffemodel);
-
+		else
+			this->cnn->CopyTrainedLayersFrom(this->path2Caffemodel);
+	}
 
 }
 
@@ -212,7 +213,13 @@ void manageObjectCnn::copyInputMap2InputLayer( cv::Mat inputMap ){
     }
 
 	cv::split(inputMap, inputMapInSeparateChannels);
-   // CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->input_blobs()[0]->cpu_data()) << "Input channels are not wrapping the input layer of the network.";
+
+	if(this->typeOfNet == SOLVER_)   
+		CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->input_blobs()[0]->cpu_data()) << "Input channels are not wrapping the input layer of the network.";
+
+	else
+		CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->cnn)->input_blobs()[0]->cpu_data()) << "Input channels are not wrapping the input layer of the network.";
+
 	this->setPointerToCnnInputData();
 }
 

@@ -8,7 +8,7 @@ void setupStart(){
 
  if(useZedJSONFile){
 		//if(zedSourceSdkJSONFile)
-		mergeFromConfidenceMap = true;
+		mergeFromConfidenceMap = false;
 
 		zedCamObject = new manageZEDObject;
 		inputImage = new manageObjectInputMap("zed", resolutionInputMapsJSONFile, zedCamObject);
@@ -26,10 +26,7 @@ void setupStart(){
 		
 
 	if(useImportFromFolderJSONFile){
-		if(useStereoPairJSONFile)
-			mergeFromConfidenceMap = true;
 
-		else
 			mergeFromConfidenceMap = false;
 
 		if(useStereoPairJSONFile)
@@ -100,8 +97,6 @@ int  main(int argc, char const *argv[])
 			}
 	
 			cv::resize(zedCamObject->getImage(), inputImageCnn, resolutionInputMapsJSONFile);
-			if(displayOutputsJSONFile)
-				cv::imshow("Original left image", inputImageCnn);
 
 		}
 
@@ -110,7 +105,7 @@ int  main(int argc, char const *argv[])
 			inputImage->readInputMap();
 			inputImage->resizeInputMap();
 			inputImage->getInputMapResized().copyTo(inputImageCnn);
-
+			inputImage->updateInputMap();
 			if(mergeFromConfidenceMap){
 				inputConfidenceMap->readInputMap();
 				inputConfidenceMap->resizeInputMap();
@@ -119,7 +114,7 @@ int  main(int argc, char const *argv[])
 			inputDepthMap->readInputMap();
 			inputDepthMap->resizeInputMap();
 			inputDepthMap->getInputMapResized().copyTo(depthGT);	
-			inputImage->updateInputMap();
+
 			inputDepthMap->updateInputMap();
 			inputImage->displayInputMapResized();
 			if(displayOutputsJSONFile){
@@ -135,6 +130,9 @@ int  main(int argc, char const *argv[])
 			}
 
 		}
+
+		if(displayOutputsJSONFile)
+			cv::imshow("Original left image", inputImageCnn);
 
 		if(leftImage.at<float>(0,0) !=0){
 			if(stereoOpenCVJSONFile){
@@ -194,10 +192,6 @@ int  main(int argc, char const *argv[])
 
 			if(useCnnSslJSONFile){
 				solver->copyInputMap2InputLayer(inputImageCnn);
-
-//double min, max;
-//cv::minMaxLoc(depthStereoOpenCv, &min, &max); std::cout << min << " " << max << std::endl;
-
 				solver->copyGroundTruthInputMap2GroundTruthInputLayer(depthStereoOpenCv);
 			 	solver->copySparseLayer(pointsForSSL);
 				solver->setScaleDepthMap(scaleSSLCnnMap);
