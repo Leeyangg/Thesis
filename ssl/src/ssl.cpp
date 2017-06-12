@@ -24,7 +24,6 @@ void setupStart(){
 	if(useCnnNoWeigthUpdateJSONFile)
 		cnn = new manageObjectCnn("cnn");
 		
-
 	if(useImportFromFolderJSONFile){
 
 			mergeFromConfidenceMap = false;
@@ -221,22 +220,29 @@ int  main(int argc, char const *argv[])
 				 depthCnn.setDepthMap(depthMapToBeMerged);
 				 depthCnn.setThresholdFilter(thresholdConfidence);
 
-				 if(mergeFromConfidenceMap){
+				/* if(mergeFromConfidenceMap){
 					depthCnn.filterPixels2BeMerged(depthStereoOpenCv);
 				//	inputConfidenceMap->updateInputMap();
 					//inputConfidenceMap->displayInputMapResized();
 				}
 
-				else
-					depthCnn.filterPixels2BeMerged();
+				else*/
+					depthCnn.filterPixels2BeMerged(depthStereoOpenCv);
 
 				depthCnn.mergeDepthMap(depthStereoOpenCv, "facil", 1.0, scaleSSLCnnMap);
 				depthCnn.refreshPixels2BeMerged();
 				if(displayOutputsJSONFile){
+					displayMergedMap.setMapResolution(resolutionOutputMapsJSONFile);
 					displayMergedMap.setMap(depthCnn.getMergedDepthMap(), "Merged Depth Map");
 					displayMergedMap.setScaleFactor(255.0/scaleSSLCnnMap);
 					displayMergedMap.useColorMap(1);
 					displayMergedMap.displayColorMat();
+
+					displaySecondMap.setMapResolution(resolutionOutputMapsJSONFile);
+					displaySecondMap.setMap(depthCnn.getSecondMap(), "Second");
+					displaySecondMap.setScaleFactor(255.0/scaleSSLCnnMap);
+					displaySecondMap.useColorMap(1);
+					displaySecondMap.displayColorMat();
 				}
 				performanceMergedMap = new manageDepthMapPerformance;
 				performanceMergedMap->setDepthMapGroundTruth(depthGT);
@@ -244,12 +250,22 @@ int  main(int argc, char const *argv[])
 				performanceMergedMap->setScaleDepthMap(1.0);
 				performanceMergedMap->setScaleGroundTruth(scaleInputDepthMap);
 				performanceMergedMap->computePerformance();
-				costsFile <<  "merger " << performanceMergedMap->getLinearRMSE() << "\n"; 
+				std::cout <<  "merger " << performanceMergedMap->getLinearRMSE() << " "; 
+
+				performanceSecondMap = new manageDepthMapPerformance;
+				performanceSecondMap->setDepthMapGroundTruth(depthGT);
+				performanceSecondMap->setDepthMapEstimation(depthCnn.getSecondMap());
+				performanceSecondMap->setScaleDepthMap(1.0);
+				performanceSecondMap->setScaleGroundTruth(scaleInputDepthMap);
+				performanceSecondMap->computePerformance();
+				std::cout <<  "second merge " << performanceSecondMap->getLinearRMSE() << "\n"; 
+
 				free(performanceMergedMap);
 			}
 				 costsFile << std::endl;
 		}
 		
+		costsFile << "\n";
 		cv::waitKey(75);
 
 	}

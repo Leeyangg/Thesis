@@ -27,13 +27,13 @@
 			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_deploy.prototxt"
 		},
 		"source":{
-			"caffemodel":"/home/ubuntu/Desktop/nyu1_2/NYU_iter_1000.caffemodel",
+			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
 		}
 	},
 
 	"importSslCnn":{
-		"use":false,
+		"use":true,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSLSparse.prototxt",
@@ -68,7 +68,7 @@
 		"scaleSslCnnMap": 10.0
 	},
 
-	"merge": false,
+	"merge": true,
 	"stereoOPenCV": true,
 	"displayMaps": true
 }

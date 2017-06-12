@@ -263,8 +263,7 @@ void manageObjectCnn::copySparseLayer( cv::Mat inputMap ){
 
 }
 
-
-cv::Mat manageObjectCnn::getCnnOutputMap(){
+	cv::Mat manageObjectCnn::getCnnOutputMap(){
 
 	return(this->cnnDepthMap);
 

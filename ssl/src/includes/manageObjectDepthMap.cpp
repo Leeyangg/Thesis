@@ -29,6 +29,7 @@ void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string meth
 			this->merger.facilOriginal();
 		
 		this->mergedDepthMap = merger.getFinalDepthMap();
+		this->secondMap = merger.getSecondMap();
 		this->merger.pixels2BeMerged.clear();
 
 	}
@@ -40,6 +41,13 @@ cv::Mat manageObjectDepthMap::getMergedDepthMap(){
 	return(this->mergedDepthMap);
 
 }
+
+cv::Mat manageObjectDepthMap::getSecondMap(){
+
+	return(this->secondMap);
+
+}
+
 
 void manageObjectDepthMap::filterPixels2BeMerged(cv::Mat referenceMap){
 

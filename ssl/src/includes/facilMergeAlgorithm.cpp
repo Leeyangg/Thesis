@@ -10,6 +10,7 @@ void facilMergeAlgorithm::facilOriginal(){
    this->stereoDepthMap.convertTo(this->stereoDepthMap, CV_32FC1);
    this->monoDepthMap.convertTo(this->monoDepthMap, CV_32FC1);
 	this->finalDepthMap.create(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
+	this->secondMap.create(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
 
 	float averageDepthMono = 0.0;
 	cv::Mat mergedDepthMap(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1, 0.5);
@@ -41,6 +42,8 @@ void facilMergeAlgorithm::facilOriginal(){
 		{
 			currentPixel.x = currentCol;
 			currentPixel.y = currentRow;
+			this->col = currentCol;
+			this->row = currentRow;
 			mergedDepthMap.at<float>(currentRow, currentCol) = this->computeDepth(currentPixel);
 
 			if(mergedDepthMap.at<float>(currentRow, currentCol) < 0)
@@ -65,8 +68,8 @@ float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){
 
 	for (int currentPointFromSparse = 0; currentPointFromSparse < numberOfPixels2Merge; ++currentPointFromSparse)
 	{
-		partialWeights[0] = this->computeW1(currentPixelMono, currentPointFromSparse);
-		partialWeights[1] = this->computeW2(currentPixelMono, currentPointFromSparse);
+		  partialWeights[0] = this->computeW1(currentPixelMono, currentPointFromSparse);
+		  partialWeights[1] = this->computeW2(currentPixelMono, currentPointFromSparse);
         partialWeights[2] = this->computeW3(currentPixelMono, currentPointFromSparse);
         partialWeights[3] = this->computeW4(currentPixelMono, currentPointFromSparse);
 
@@ -86,15 +89,60 @@ float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){
         }           
 	}
 
+	std::vector<float> vectorNormalizedWeights;
+	float sumWeights = 0.0;
+	float maxWeight = 0.0;
+
 	for (int currentPointFromSparse2 = 0; currentPointFromSparse2 < numberOfPixels2Merge; ++currentPointFromSparse2)
 	{
 		float normalizeWeight = 0.0;
 
 		normalizeWeight =  this->normalizeWeights(allPartialWeights[currentPointFromSparse2] , minAllPartialWeights , sumOfAllPartialWeights);
+
+		sumWeights = sumWeights + normalizeWeight;
+		vectorNormalizedWeights.push_back(normalizeWeight);
+
+		if(normalizeWeight > maxWeight)
+			maxWeight = normalizeWeight;
+
 		pixelDepth = pixelDepth +  normalizeWeight*(this->stereoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y,this->pixels2BeMerged[currentPointFromSparse2].x) + this->monoDepthMap.at<float>(currentPixelMono.y,currentPixelMono.x) - this->monoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y, this->pixels2BeMerged[currentPointFromSparse2].x));
 	
 	}
+
+	this->meanWeightVector = sumWeights/numberOfPixels2Merge;
+	this->computeStdDev(vectorNormalizedWeights);
+	float xx =0.0;
+	float threshold = this->meanWeightVector + this->stdDevWeightVector;
+
+	for (int currentPointFromSparse2 = 0; currentPointFromSparse2 < numberOfPixels2Merge; ++currentPointFromSparse2)
+	{
+	
+		if(vectorNormalizedWeights[currentPointFromSparse2] > threshold){
+		
+			xx = xx +  vectorNormalizedWeights[currentPointFromSparse2]*(this->stereoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y,this->pixels2BeMerged[currentPointFromSparse2].x) + this->monoDepthMap.at<float>(currentPixelMono.y,currentPixelMono.x) - this->monoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y, this->pixels2BeMerged[currentPointFromSparse2].x));
+			this->secondMap.at<float>(this->row, this->col) = xx;
+
+		}
+	
+	}
+
+
+
 	return (pixelDepth);
+}
+
+void facilMergeAlgorithm::computeStdDev(std::vector<float> vectorNormalizedWeights){
+
+	this->stdDevWeightVector = 0.0;
+
+	for(auto normalizedWeight: vectorNormalizedWeights){
+
+		this->stdDevWeightVector = this->stdDevWeightVector + (1.0/(this->pixels2BeMerged.size()-1))*pow(normalizedWeight-this->meanWeightVector,2);
+
+	}
+
+	this->stdDevWeightVector = sqrt(this->stdDevWeightVector);
+
 }
 
 float facilMergeAlgorithm::normalizeWeights(float partialWeight, float minAllPartialWeights, float sumOfAllPartialWeights ){
@@ -158,6 +206,12 @@ void facilMergeAlgorithm::setPixels2BeMerged(std::vector<cv::Point_<int>> inputP
 cv::Mat facilMergeAlgorithm::getFinalDepthMap(){
 
 	return(this->finalDepthMap);
+
+};
+
+cv::Mat facilMergeAlgorithm::getSecondMap(){
+
+	return(this->secondMap);
 
 };
 

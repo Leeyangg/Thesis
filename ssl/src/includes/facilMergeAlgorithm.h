@@ -12,6 +12,7 @@ class facilMergeAlgorithm
  	void setstereoDepthMap(cv::Mat inputStereoDepthMap);
  	void setPixels2BeMerged(std::vector<cv::Point_<int>> inputPixels2BeMerged);
  	cv::Mat getFinalDepthMap();
+ 	cv::Mat getSecondMap();
  	void facilOriginal();
  	void setSigma1(int newSigma);
  	void setSigma2(int newSigma);
@@ -32,6 +33,8 @@ class facilMergeAlgorithm
  	float sigma3 = 1*exp(-3);
  	float scaleMonoDepthMap = 6.0;
  	float scaleStereoDepthMap = 10.0/255.0;
+	float meanWeightVector;
+	double stdDevWeightVector;
  	void computeXDerivative();
  	void computeYDerivative();
  	float computeW1(cv::Point_<int> currentPixel, int currentPointFromSparse);
@@ -40,5 +43,9 @@ class facilMergeAlgorithm
  	float computeW4(cv::Point_<int> currentPixel, int currentPointFromSparse);
   	float normalizeWeights(float partialWeight, float minAllPartialWeights, float sumOfAllPartialWeights );
 	float computeDepth(cv::Point_<int> currentPixel);
+	void computeStdDev(std::vector<float> vectorNormalizedWeights);
+
+	cv::Mat secondMap;
+	int row, col;
  	
  };
