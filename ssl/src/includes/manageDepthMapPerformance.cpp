@@ -9,9 +9,13 @@ manageDepthMapPerformance::manageDepthMapPerformance(){
 	this->linearRMSE = 0.0;
 	this->logRMSE = 0.0;
 	this->scaleInvariantError = 0.0;
+	this->cumulativeError = 0.0;
+	this->meanError = 0.0;
+	this->counterMeanError = 1;
 	this->thresholdErrorThreshold = 1.25;
 	this->scaleDepthMap = 1.0;
 	this->scaleGroundTruth = 1.0;
+
 }
 
 
@@ -23,6 +27,35 @@ void manageDepthMapPerformance::setDepthMapGroundTruth(cv::Mat groundTruthMap){
 	this->groundTruthMap.convertTo(this->groundTruthMap, CV_32FC1);
 
 }
+
+void manageDepthMapPerformance::resetErrors(){
+
+	this->absoluteRelativeError = 0.0;
+	this->squaredRelativeError = 0.0;
+	this->linearRMSE = 0.0;
+	this->logRMSE = 0.0;
+	this->scaleInvariantError = 0.0;
+}
+
+void manageDepthMapPerformance::computeMeanError(float partialError){
+	this->computeCumulativeError(partialError);
+	this->meanError = this->cumulativeError/float(this->counterMeanError);
+	this->counterMeanError++;
+}
+
+void manageDepthMapPerformance::computeCumulativeError(float partialError){
+	this->cumulativeError = this->cumulativeError + partialError;
+}
+
+
+float manageDepthMapPerformance::getMeanError(){
+	return(this->meanError);
+}
+
+float manageDepthMapPerformance::getCumulativeError(){
+	return(this->cumulativeError);
+}
+
 
 void manageDepthMapPerformance::setDepthMapEstimation(cv::Mat estimationMap){
 
@@ -46,6 +79,8 @@ void manageDepthMapPerformance::computePerformance(){
 	int rowsInputMap = this->groundTruthMap.rows;
 	int colsInputMap = this->groundTruthMap.cols;
 	int numberValidPixels = 0;
+	
+	this->resetErrors();
 
 	for (int currentRow = 0; currentRow < rowsInputMap; ++currentRow)
 	{

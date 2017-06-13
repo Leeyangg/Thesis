@@ -18,11 +18,24 @@ void setupStart(){
 
 	}
 
-	if(useCnnSslJSONFile)
-		solver = new manageObjectCnn("solver");
+	if(stereoOpenCVJSONFile)
+		performanceStereoMap = new manageDepthMapPerformance;
 
-	if(useCnnNoWeigthUpdateJSONFile)
+	if(useCnnSslJSONFile){
+		solver = new manageObjectCnn("solver");
+		performanCnnMap = new manageDepthMapPerformance;
+	}
+
+	if(mergeJSONFile){
+			performanceMergedMap = new manageDepthMapPerformance;
+			performanceSecondMap = new manageDepthMapPerformance;		
+		}
+
+
+	if(useCnnNoWeigthUpdateJSONFile){
 		cnn = new manageObjectCnn("cnn");
+		performanOriginalCnnMap = new manageDepthMapPerformance;	
+	}
 		
 	if(useImportFromFolderJSONFile){
 
@@ -37,6 +50,7 @@ void setupStart(){
 
 		if(mergeJSONFile)
 			inputConfidenceMap = new manageObjectInputMap("confidence", resolutionOutputMapsJSONFile);
+
 	}
 
 
@@ -71,9 +85,9 @@ int  main(int argc, char const *argv[])
 	cv::Mat pointsForSSL;
 	config::loadVariablesFromJson();
 	setupStart();
-
+	int currentFrame = 0;
 	for(;;){
-
+		currentFrame++;
 		if(useZedJSONFile){
 			//zedCamObject->grabFrame();
 			zedCamObject->getLeftImage(true).copyTo(leftImage);
@@ -153,14 +167,15 @@ int  main(int argc, char const *argv[])
 					displayDepthStereoMap.displayColorMat();
 				}
 
-				performanceStereoMap = new manageDepthMapPerformance;
+
 				performanceStereoMap->setDepthMapGroundTruth(depthGT);
 				performanceStereoMap->setDepthMapEstimation(depthStereoOpenCv);
 				performanceStereoMap->setScaleDepthMap(1.0);
 				performanceStereoMap->setScaleGroundTruth(scaleInputDepthMap);
 				performanceStereoMap->computePerformance();
-				costsFile << "stereo " << performanceStereoMap->getLinearRMSE() << " ";
-				free(performanceStereoMap);				
+				performanceStereoMap->computeMeanError(performanceStereoMap->getLinearRMSE());
+				std::cout << "stereo:\n " << performanceStereoMap->getLinearRMSE() << " " << performanceStereoMap->getMeanError() << std::endl;
+			
 			}
 
 
@@ -179,14 +194,15 @@ int  main(int argc, char const *argv[])
 					displayDepthOriginalCnnColorMap.useColorMap(1);
 					displayDepthOriginalCnnColorMap.displayColorMat();
 				}
-				performanOriginalCnnMap = new manageDepthMapPerformance;
+				
 				performanOriginalCnnMap->setDepthMapGroundTruth(depthGT);
 				performanOriginalCnnMap->setDepthMapEstimation(cnn->getCnnOutputMap());
 				performanOriginalCnnMap->setScaleDepthMap(scaleOriginalCnnMap);
 				performanOriginalCnnMap->setScaleGroundTruth(scaleInputDepthMap);
 				performanOriginalCnnMap->computePerformance();
-				costsFile << "cnn "<< performanOriginalCnnMap->getLinearRMSE() << " ";
-				free(performanOriginalCnnMap);
+				performanOriginalCnnMap->computeMeanError(performanOriginalCnnMap->getLinearRMSE());
+				std::cout  << "cnn original \n"<< performanOriginalCnnMap->getLinearRMSE()  << " " << performanOriginalCnnMap->getMeanError() << std::endl;
+
 			}
 
 			if(useCnnSslJSONFile){
@@ -205,14 +221,17 @@ int  main(int argc, char const *argv[])
 					displayDepthCnnSSLColorMap.useColorMap(1);
 					displayDepthCnnSSLColorMap.displayColorMat();
 				}
-				performanCnnMap = new manageDepthMapPerformance;
+		
+
+
 				performanCnnMap->setDepthMapGroundTruth(depthGT);
 				performanCnnMap->setDepthMapEstimation(solver->getCnnOutputMap());
 				performanCnnMap->setScaleDepthMap(scaleSSLCnnMap);
 				performanCnnMap->setScaleGroundTruth(scaleInputDepthMap);
 				performanCnnMap->computePerformance();
-				costsFile << "SSL" << performanCnnMap->getLinearRMSE() << " ";
-				free(performanCnnMap);
+				performanCnnMap->computeMeanError(performanCnnMap->getLinearRMSE());
+				std::cout << "SSL: \n" << performanCnnMap->getLinearRMSE() << " " << performanCnnMap->getMeanError() << std::endl;
+
 			}
 
 			if(mergeJSONFile){
@@ -238,35 +257,41 @@ int  main(int argc, char const *argv[])
 					displayMergedMap.useColorMap(1);
 					displayMergedMap.displayColorMat();
 
+
 					displaySecondMap.setMapResolution(resolutionOutputMapsJSONFile);
-					displaySecondMap.setMap(depthCnn.getSecondMap(), "Second");
+					displaySecondMap.setMap(depthCnn.getSecondMap(), "Second Merged Depth Map");
 					displaySecondMap.setScaleFactor(255.0/scaleSSLCnnMap);
 					displaySecondMap.useColorMap(1);
 					displaySecondMap.displayColorMat();
+
 				}
-				performanceMergedMap = new manageDepthMapPerformance;
+
 				performanceMergedMap->setDepthMapGroundTruth(depthGT);
 				performanceMergedMap->setDepthMapEstimation(depthCnn.getMergedDepthMap());
 				performanceMergedMap->setScaleDepthMap(1.0);
 				performanceMergedMap->setScaleGroundTruth(scaleInputDepthMap);
 				performanceMergedMap->computePerformance();
-				std::cout <<  "merger " << performanceMergedMap->getLinearRMSE() << " "; 
+				performanceMergedMap->computeMeanError(performanceMergedMap->getLinearRMSE() );
+				std::cout <<  "merger original:\n " << performanceMergedMap->getLinearRMSE() << " " << performanceMergedMap->getMeanError() << std::endl; 
 
-				performanceSecondMap = new manageDepthMapPerformance;
 				performanceSecondMap->setDepthMapGroundTruth(depthGT);
 				performanceSecondMap->setDepthMapEstimation(depthCnn.getSecondMap());
 				performanceSecondMap->setScaleDepthMap(1.0);
 				performanceSecondMap->setScaleGroundTruth(scaleInputDepthMap);
 				performanceSecondMap->computePerformance();
-				std::cout <<  "second merge " << performanceSecondMap->getLinearRMSE() << "\n"; 
+				performanceSecondMap->computeMeanError(performanceSecondMap->getLinearRMSE());
+				std::cout <<  "second merge: \n " << performanceSecondMap->getLinearRMSE() << " " << performanceSecondMap->getMeanError() << std::endl; 
 
-				free(performanceMergedMap);
+
 			}
 				 costsFile << std::endl;
 		}
 		
 		costsFile << "\n";
-		cv::waitKey(75);
+		std::cout << "\n";
+		
+		if(displayOutputsJSONFile)
+			cv::waitKey(75);
 
 	}
 

@@ -11,22 +11,22 @@
 		"use":false,
 		"stereoPair":false,
 		"source": {
-			"left":"/media/ubuntu/My Passport/indoorsDepths/images/left/",
-			"right":"/media/ubuntu/My Passport/indoorsDepths/images/right/",
-		    "depthGt":"/home/diogo/Desktop/datasets/nyu1_2/train_gt/labels/",
-		    "confidence":"/home/diogo/Desktop/datasets/mine/depth_maps/1/depths/confidence/",
-			"format":"",
-			"firstFrame": 9
+			"left":"/media/ubuntu/My Passport/aerospaceDepths/7/images/left/",
+			"right":"/media/ubuntu/My Passport/aerospaceDepths/7/images/right/",
+		    "depthGt":"/media/ubuntu/My Passport/aerospaceDepths/7/depths/gt/",
+		    "confidence":"/media/ubuntu/My Passport/aerospaceDepths/7/depths/confidence/",
+			"format":"20000_f",
+			"firstFrame": 1
 		}
 	},
 
 	"importCnnNoWeightUpdate":{
 		"use":true,
-		"source2":{
+		"source":{
 			"caffemodel":"/home/ubuntu/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
 			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_deploy.prototxt"
 		},
-		"source":{
+		"source1":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
 		}
@@ -34,33 +34,37 @@
 
 	"importSslCnn":{
 		"use":true,
-		"source":{
-			"caffemodel":"../nets/trainedNet.caffemodel",
+		"source2":{
+			"caffemodel":"",
 			"protofile":"../nets/eigenSSLSparse.prototxt",
 			"solverfile":"../nets/solverSSLSparse.prototxt"
 		},
-		"source2":{
+		"source":{
 			"caffemodel":"/home/ubuntu/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
 			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_train.prototxt",
 			"solverfile":"/home/ubuntu/Desktop/Depth-Estimation/solver.prototxt"
 		}
 	},
 
-	"resolutionInputMaps":{
+	"resolutionInputMapsp":{
 		"width":256,
 		"height":160
 	},
-	"resolutionInputMapsy":{
+	"resolutionInputMaps":{
 		"width":298,
 		"height":218
 	},
-	"resolutionOutputMaps":{
+	"resolutionOutputMapso":{
 		"width":64,
 		"height":40
 	},
-	"resolutionOutputMapsj":{
+	"resolutionOutputMaps":{
 		"width":74,
 		"height":54
+	},
+	"resolutionOutputMaps2":{
+		"width":298,
+		"height":218
 	},
 
 	"scales":{

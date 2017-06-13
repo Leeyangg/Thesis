@@ -18,6 +18,10 @@ public:
 	float getLinearRMSE();
 	float getLogRMSE();
 	float getScaleInvariantError();
+	void computeMeanError(float partialError);
+	void computeCumulativeError(float partialError);
+	float getMeanError();
+	float getCumulativeError();
 	void setThresholdErrorThreshold(float threshold);
 	void setScaleDepthMap(float scale);
 	void setScaleGroundTruth(float scale);
@@ -42,6 +46,10 @@ private:
 	float computeLinearRMSE();
 	float computeLogRMSE();
 	void computeScaleInvariantError();
+	float meanError;
+	float cumulativeError;
+	void resetErrors();
+	float counterMeanError;
 
 	struct scaleInvariantErrorMetric
 	{
