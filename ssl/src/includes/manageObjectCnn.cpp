@@ -33,7 +33,8 @@ manageObjectCnn::manageObjectCnn(std::string typeOfNet){
 	this->setSizeOutputLayer();
 	this->setPointerToCnnInputData();
 	this->setPointerToCnnOutputData();
-	this->setPointerToGroundTruthInputData();		
+	this->setPointerToGroundTruthInputData();
+	this->setPointerToSparseMatrixData();			
 	this->allocateCnnDepthMap();
 	this->setScaleDepthMap(1.0);
 
@@ -235,6 +236,26 @@ void manageObjectCnn::copyGroundTruthInputMap2GroundTruthInputLayer( cv::Mat inp
 
 }
 
+void manageObjectCnn::copySparseLayer( cv::Mat inputMap ){
+
+	std::vector<cv::Mat> inputMapInSeparateChannels;
+	int numberChannelInputImage = 1;
+	inputMap.convertTo(inputMap, CV_32FC1);
+	cv::resize(inputMap,inputMap,cv::Size(this->outputLayerSize.width , this->outputLayerSize.height));
+
+	for (int currentChannel2 = 0 ; currentChannel2 < numberChannelInputImage ; ++currentChannel2) {
+        cv::Mat channel2(this->outputLayerSize.height,this->outputLayerSize.width, CV_32FC1, this->pointerToSparse );
+        inputMapInSeparateChannels.push_back(channel2);
+        this->pointerToSparse += this->outputLayerSize.width * this->outputLayerSize.height;
+    }
+
+	cv::split(inputMap, inputMapInSeparateChannels);
+    CHECK(reinterpret_cast<float*>(inputMapInSeparateChannels.at(0).data)  == (this->solver)->net()->blob_by_name("sparseData")->cpu_data() ) << "Input channels are not wrapping the input layer of the network.";
+
+	this->setPointerToSparseMatrixData();
+
+}
+
 
 cv::Mat manageObjectCnn::getCnnOutputMap(){
 
@@ -250,6 +271,11 @@ void manageObjectCnn::setPointerToCnnOutputData(){
 	else
 		this->pointerToCnnOutputMap = (this->cnn)->blob_by_name("cnnDepth")->mutable_cpu_data();
 
+}
+void manageObjectCnn::setPointerToSparseMatrixData(){
+	if(this->typeOfNet == SOLVER_){
+		this->pointerToSparse = (this->solver)->net()->blob_by_name("sparseData")->mutable_cpu_data();
+	}
 }
 
 void manageObjectCnn::setPointerToCnnInputData(){

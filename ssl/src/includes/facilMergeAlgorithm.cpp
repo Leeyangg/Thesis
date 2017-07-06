@@ -7,8 +7,8 @@ facilMergeAlgorithm::~facilMergeAlgorithm(){}
 
 void facilMergeAlgorithm::facilOriginal(){
 
-    this->stereoDepthMap.convertTo(this->stereoDepthMap, CV_32FC1);
-    this->monoDepthMap.convertTo(this->monoDepthMap, CV_32FC1);
+   this->stereoDepthMap.convertTo(this->stereoDepthMap, CV_32FC1);
+   this->monoDepthMap.convertTo(this->monoDepthMap, CV_32FC1);
 	this->finalDepthMap.create(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
 
 	float averageDepthMono = 0.0;
@@ -50,7 +50,6 @@ void facilMergeAlgorithm::facilOriginal(){
 	
 	}
 	mergedDepthMap.copyTo(this->finalDepthMap);
-
 }
 
 float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){

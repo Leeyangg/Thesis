@@ -35,9 +35,11 @@ manageObjectDepthMap depthCnn;
 manageDepthMapPerformance * performanOriginalCnnMap;
 manageDepthMapPerformance * performanCnnMap;
 manageDepthMapPerformance * performanceMergedMap;
+manageDepthMapPerformance * performanceStereoMap;
 displayObjectDepthMap displayDepthColorMap;
 displayObjectDepthMap displayDepthCnnColorMap;
 displayObjectDepthMap displayDepthOriginalCnnColorMap;
+displayObjectDepthMap displayDepthCnnSSLColorMap;
 stereoBMOpencv bmAlgorithm;
 manageZEDObject * zedCamObject;
 

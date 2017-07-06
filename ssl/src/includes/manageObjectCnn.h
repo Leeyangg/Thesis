@@ -22,6 +22,7 @@ public:
 	cv::Size getSizeOutputLayer();
 	void copyInputMap2InputLayer(cv::Mat inputMap);
 	void copyGroundTruthInputMap2GroundTruthInputLayer(cv::Mat inputMap);
+	void copySparseLayer(cv::Mat sparseMap);
 	void forwardPassCnn();
 	void extractDepthMapCnn();
 	void setOutputLayer(std::string outputLayerNamer);
@@ -39,6 +40,7 @@ private:
 	cv::Size inputLayerSize;
 	cv::Size outputLayerSize;
 	const float* pointerToCnnOutputMap;
+	float* pointerToSparse;
 	float* pointerToCnnInputMap;
 	float* pointerToGroundTruthInputMap;
 	cv::Mat cnnDepthMap;
@@ -64,6 +66,7 @@ private:
 	void setSizeOutputLayer();
 	void allocateCnnDepthMap();
 	void setPointerToGroundTruthInputData();
+	void setPointerToSparseMatrixData();
 	void setTypeOfNet(std::string typeOfNet);
 	void setNumberOfInputChannels();
 	void setOutputLayer();

@@ -2,8 +2,8 @@
 	"zed": {
 		"use":true,
 		"source": {
-			"opencv":true,
-			"sdk":false
+			"opencv":false,
+			"sdk":true
 		}
 	},
 
@@ -21,7 +21,7 @@
 	},
 
 	"importCnnNoWeightUpdate":{
-		"use":false,
+		"use":true,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
@@ -32,8 +32,8 @@
 		"use":true,
 		"source":{
 			"caffemodel":"../nets/trainedNet.caffemodel",
-			"protofile":"../nets/eigenSSL.prototxt",
-			"solverfile":"../nets/solverSSL.prototxt"
+			"protofile":"../nets/eigenSSLSparse.prototxt",
+			"solverfile":"../nets/solverSSLSparse.prototxt"
 		}
 	},
 
@@ -52,6 +52,6 @@
 		"scaleSslCnnMap": 10.0
 	},
 
-	"merge": false,
+	"merge": true,
 	"stereoOPenCV": true
 }

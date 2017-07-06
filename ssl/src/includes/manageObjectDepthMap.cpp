@@ -22,12 +22,12 @@ void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string meth
 		this->merger.setmonoDepthMap(this->depthMap);
 		this->merger.setstereoDepthMap(map2MergeWith);
 		this->merger.setPixels2BeMerged(this->pixels2BeMerged);
+		this->merger.setScaleMonoDepthMap(scaleSSLCnnMap);
+		this->merger.setScaleStereoDepthMap(scaleInputDepthMap);
 
 		if(this->pixels2BeMerged.size() > 0)
 			this->merger.facilOriginal();
 		
-		this->merger.setScaleMonoDepthMap(scaleSSLCnnMap);
-		this->merger.setScaleStereoDepthMap(scaleInputDepthMap);
 		this->mergedDepthMap = merger.getFinalDepthMap();
 		this->merger.pixels2BeMerged.clear();
 
@@ -61,7 +61,6 @@ void manageObjectDepthMap::filterPixels2BeMerged(cv::Mat referenceMap){
 			}
 		}
 	}
-
 }
 
 void manageObjectDepthMap::filterPixels2BeMerged(){
@@ -110,6 +109,7 @@ displayObjectDepthMap::displayObjectDepthMap(){
 	this->saveCounter = 0;
 	this->mapResolution.height = 160;
 	this->mapResolution.width = 256;
+	this->map.create(this->mapResolution, CV_32FC3);
 	this->colorMap.create(this->mapResolution, CV_32FC3);
 	this->scaleFactor = 1;
 
@@ -149,7 +149,6 @@ void displayObjectDepthMap::useColorMap(int choiceMap){
 
 	cv::convertScaleAbs(this->map, this->map, this->scaleFactor);
 	
-
 	switch (choiceMap){
 		case 1:
 			applyColorMap(this->map, this->colorMap,  cv::COLORMAP_RAINBOW);

@@ -6,12 +6,15 @@ manageZEDObject::manageZEDObject(){
 	this->checkZEDStart();
 	this->setMapWidth();
 	this->setMapHeight();
-    this->zedCVImage.create(this->mapHeight,this->mapWidth, CV_16UC3);
+   this->zedCVImage.create(this->mapHeight,this->mapWidth, CV_16UC3);
 	this->zedCVMap.create(this->mapHeight,this->mapWidth, CV_32FC1);
+	this->rightImage.create(this->mapHeight,this->mapWidth, this->zedCVImage.type());
+	this->leftImage.create(this->mapHeight, this->mapWidth, this->zedCVImage.type());
 	this->scaleToConvertMapToMeters = 0.001;
 	this->setMaximumDepthDistance(10000);
 	this->maximumDepth = this->zedObject->getDepthClampValue()*this->scaleToConvertMapToMeters;
 	std::thread release(grabFrameZed, this);
+	release.detach();
 
 #else
 	this->zedOpencv.open(1);
@@ -64,6 +67,8 @@ void manageZEDObject::checkZEDStart(){
 void manageZEDObject::grabFrame(){
 #ifdef COMPILE_ZED
 	this->zedObject->grab(sl::zed::RAW);
+	sl::zed::slMat2cvMat(this->zedObject->retrieveImage(sl::zed::SIDE::LEFT)).copyTo(this->leftImage);
+	sl::zed::slMat2cvMat(this->zedObject->retrieveImage(sl::zed::SIDE::RIGHT)).copyTo(this->rightImage);
 
 #else
 
@@ -129,7 +134,6 @@ cv::Mat manageZEDObject::getDepthMap(){
 #ifdef COMPILE_ZED
 		sl::zed::slMat2cvMat(this->zedObject->retrieveMeasure(sl::zed::MEASURE::DEPTH)).copyTo(this->zedCVMap);
 		cv::convertScaleAbs(this->zedCVMap, this->zedCVMap, 255*this->scaleToConvertMapToMeters/this->maximumDepth);
-
 #else
 
 #endif

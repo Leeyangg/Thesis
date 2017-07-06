@@ -30,8 +30,8 @@ class facilMergeAlgorithm
  	float sigma1 = 15.0;
  	float sigma2 = 0.1;
  	float sigma3 = 1*exp(-3);
- 	float scaleMonoDepthMap = 6;
- 	float scaleStereoDepthMap = 10/255;
+ 	float scaleMonoDepthMap = 6.0;
+ 	float scaleStereoDepthMap = 10.0/255.0;
  	void computeXDerivative();
  	void computeYDerivative();
  	float computeW1(cv::Point_<int> currentPixel, int currentPointFromSparse);

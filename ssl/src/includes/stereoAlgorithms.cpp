@@ -13,9 +13,14 @@ void stereoBMOpencv::computeDisparityMap(){
 }
 
 void stereoBMOpencv::computeAbsoluteDepthMap(){
+	
+	cv::resize(this->disparityMap, this->disparityMap, this->resolution);
+
 	int heightMap = this->disparityMap.rows;
 	int widthMap = this->disparityMap.cols;
 
+	
+	this->pointsForSSL.create(heightMap, widthMap, CV_32FC1);
 	this->absoluteDepthMap.create(heightMap, widthMap, CV_32FC1);   
 
 	for (int row = 0; row < heightMap; ++row)
@@ -23,14 +28,26 @@ void stereoBMOpencv::computeAbsoluteDepthMap(){
 		for (int col = 0; col < widthMap; ++col)
 		{	
 
-			this->absoluteDepthMap.at<float>(row,col) = 10.0;
+
 			this->disparityMap.at<float>(row,col) = std::abs(this->disparityMap.at<float>(row,col));
 			this->absoluteDepthMap.at<float>(row,col) = this->scaleDepthMap/this->disparityMap.at<float>(row,col);
 			
-			if(this->absoluteDepthMap.at<float>(row,col) > 10.0)
-				this->absoluteDepthMap.at<float>(row,col) = -99;	
+			if(this->absoluteDepthMap.at<float>(row,col) > 10.0 || this->absoluteDepthMap.at<float>(row,col) < 0.0){
+				this->absoluteDepthMap.at<float>(row,col) = -99;
+				this->pointsForSSL.at<float>(row,col) = 0.0;
+			}
+
+			else
+				this->pointsForSSL.at<float>(row,col) = 1.0;
+	
 		}
 	}
+}
+
+cv::Mat stereoBMOpencv::getPointsForSSL(){
+
+	return(this->pointsForSSL);
+
 }
 
 void stereoBMOpencv::setLeftImage(cv::Mat image){

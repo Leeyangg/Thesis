@@ -16,6 +16,7 @@ public:
 	cv::Mat getAbsoluteDepthMapResized();
 	cv::Mat getDisparityMap();
 	cv::Mat getDisparityMapResized();
+	cv::Mat getPointsForSSL();
 
 private:
 	float scaleDepthMap;
@@ -28,6 +29,7 @@ private:
 	cv::Mat disparityMapResized;
 	cv::Mat absoluteDepthMap;
 	cv::Mat absoluteDepthMapResized;
+	cv::Mat pointsForSSL;
 	cv::StereoBM stereoBM;//(16,15);
 	cv::StereoSGBM stereoSGBM;
 };
