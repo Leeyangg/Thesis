@@ -3,6 +3,7 @@
 
 //My includes
 #include "facilMergeAlgorithm.h"
+#include "confidenceMergeAlgorithm.h"
 
 class manageObjectDepthMap
 {
@@ -13,20 +14,30 @@ public:
 	cv::Mat getSecondMap();
 	void mergeDepthMap(cv::Mat map2MergeWith, std::string method,  float scaleInputDepthMap, float scaleSSLCnnMap);
 	void filterPixels2BeMerged(cv::Mat referenceMap);
+	void filterPixels2BeMerged(cv::Mat referenceMap, int threshold);
 	void filterPixels2BeMerged();
 	void setThresholdFilter(int threshold);
 	int  getThresholdFilter();
+	int getNumberPixelsForMerge();
 	void refreshPixels2BeMerged();
 	void setDepthMap(cv::Mat referenceMap);
+	void setConfidenceMap(cv::Mat referenceMap);
+	void setEdgeMap(cv::Mat referenceMap);
+	cv::Mat getPointsForSSL();
 
 private:
 	cv::Mat mergedDepthMap;
 	cv::Mat secondMap;
 	cv::Mat depthMap;
+	cv::Mat confidenceMap;
+	cv::Mat edgeMap;
 	std::vector<cv::Point_<int>> pixels2BeMerged;
 	int thresholdFilter;
 	facilMergeAlgorithm  merger;
+	confidenceMergeAlgorithm confMerger;
+	cv::Mat pointsForSSL;
 	float scale;
+	int availablePixelFromSparse;
 
 };
 
@@ -40,7 +51,7 @@ public:
 	void displayMat();
 	void displayColorMat();
 	void useColorMap(int choiceMap);
-	void saveMap();
+	void saveMap(int frame);
 	void setMap(cv::Mat map, std::string windowTitle);
 
 private:

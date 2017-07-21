@@ -12,6 +12,7 @@ public:
 	void computeAbsoluteDepthMap();
 	void setScaleDepthMap(float scale);
 	void setResolution(cv::Size resolution);
+	int getAvailablePoints();
 	cv::Mat getAbsoluteDepthMap();
 	cv::Mat getAbsoluteDepthMapResized();
 	cv::Mat getDisparityMap();
@@ -20,6 +21,7 @@ public:
 
 private:
 	float scaleDepthMap;
+	int availablePoints;
 	cv::Size resolution;
 	cv::Mat leftImage;
 	cv::Mat leftImageGrayScale;
@@ -30,7 +32,7 @@ private:
 	cv::Mat absoluteDepthMap;
 	cv::Mat absoluteDepthMapResized;
 	cv::Mat pointsForSSL;
-	cv::StereoBM stereoBM;//(16,15);
+	cv::StereoBM stereoBM;
 	cv::StereoSGBM stereoSGBM;
 };
 

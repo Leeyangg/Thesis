@@ -17,7 +17,7 @@ manageZEDObject::manageZEDObject(){
 	release.detach();
 
 #else
-	this->zedOpencv.open(1);
+	this->zedOpencv.open(0);
 
 	this->checkZEDStart();
 	this->setMapWidth();

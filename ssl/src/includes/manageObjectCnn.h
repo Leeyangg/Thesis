@@ -23,13 +23,14 @@ public:
 	void copyInputMap2InputLayer(cv::Mat inputMap);
 	void copyGroundTruthInputMap2GroundTruthInputLayer(cv::Mat inputMap);
 	void copySparseLayer(cv::Mat sparseMap);
-	void forwardPassCnn();
+	void forwardPassCnn(bool learn);
 	void extractDepthMapCnn();
 	void setOutputLayer(std::string outputLayerNamer);
 	cv::Mat getCnnOutputMap();
 	void setScaleDepthMap(float scale);
 	void computeMeanDepthMap();
 	void replaceNegativeDepths();
+	void saveSnapshot();
 
 private:
 

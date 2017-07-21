@@ -4,6 +4,12 @@
 //C includes
 #include <math.h>
 
+
+//My includes
+#include "loadConfiguration.h"
+
+#define ZED_BIAS 0.5
+
 class manageDepthMapPerformance
 {
 public:
@@ -12,16 +18,13 @@ public:
 	void setDepthMapGroundTruth(cv::Mat groundTruthMap);
 	void setDepthMapEstimation(cv::Mat estimationMap);
 	void computePerformance();
+	void computePerformance(cv::Mat confidenceMap);
 	float getThresholdError();
 	float getAbsoluteRelativeError();
 	float getSquaredRelativeError();
 	float getLinearRMSE();
-	float getLogRMSE();
+	double getLogRMSE();
 	float getScaleInvariantError();
-	void computeMeanError(float partialError);
-	void computeCumulativeError(float partialError);
-	float getMeanError();
-	float getCumulativeError();
 	void setThresholdErrorThreshold(float threshold);
 	void setScaleDepthMap(float scale);
 	void setScaleGroundTruth(float scale);
@@ -35,7 +38,7 @@ private:
 	float absoluteRelativeError;
 	float squaredRelativeError;
 	float linearRMSE;
-	float logRMSE;
+	double logRMSE;
 	float scaleInvariantError;
 	float currentPixelGroundTruth;
 	float currentPixelPrediction;
@@ -44,18 +47,17 @@ private:
 	float computeAbsoluteRelativeError();
 	float computeSquaredRelativeError();
 	float computeLinearRMSE();
-	float computeLogRMSE();
-	void computeScaleInvariantError();
-	float meanError;
-	float cumulativeError;
+	double computeLogRMSE();
+	float computeScaleInvariantError();
+	void computePartialsScaleInvariantError();
 	void resetErrors();
-	float counterMeanError;
+
 
 	struct scaleInvariantErrorMetric
 	{
 		float di       = 0.0;
 		float partial1 = 0.0;
-		float partial2 = 0.0;
+		std::vector<float> partial2;
 		float lambda   = 0.5;
 
 	};

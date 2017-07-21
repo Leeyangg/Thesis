@@ -1,5 +1,9 @@
+// My includes
+#include "loadConfiguration.h"
+
 // OpenCV includes
 #include "opencv2/opencv.hpp"
+#define BIAS_GT 0.5
 
 class facilMergeAlgorithm
  {

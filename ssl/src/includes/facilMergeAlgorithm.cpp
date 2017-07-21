@@ -1,14 +1,16 @@
 //My includes
 #include "facilMergeAlgorithm.h"
 
+extern bool stereoOpenCVJSONFile;
+
 facilMergeAlgorithm::facilMergeAlgorithm(){}
 
 facilMergeAlgorithm::~facilMergeAlgorithm(){}
 
 void facilMergeAlgorithm::facilOriginal(){
 
-   this->stereoDepthMap.convertTo(this->stereoDepthMap, CV_32FC1);
-   this->monoDepthMap.convertTo(this->monoDepthMap, CV_32FC1);
+    this->stereoDepthMap.convertTo(this->stereoDepthMap, CV_32FC1);
+    this->monoDepthMap.convertTo(this->monoDepthMap, CV_32FC1);
 	this->finalDepthMap.create(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
 	this->secondMap.create(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
 
@@ -23,8 +25,25 @@ void facilMergeAlgorithm::facilOriginal(){
 		for (int currentCol = 0; currentCol < colsInputMap; ++currentCol)
 		{
 
-			this->stereoDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*this->scaleStereoDepthMap;
-			this->monoDepthMap.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol)*this->scaleMonoDepthMap;
+			if(stereoOpenCVJSONFile)
+				this->stereoDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*this->scaleStereoDepthMap;
+
+			else
+				this->stereoDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*(19.5/255.0*(-1.0))+20.0;
+
+			//this->monoDepthMap.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol)*this->scaleMonoDepthMap + BIAS_GT;
+
+	    	if(!janivanecky)
+	    		this->monoDepthMap.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol)*(19.5*(-1.0))+20.0;
+
+	    	else{
+	    		//CHECK IF I NEED TO DIVIDE BY 255555555555555!!!!!!!!!!!!!!!
+	    		this->monoDepthMap.at<float>(currentRow, currentCol) = 19.5*this->monoDepthMap.at<float>(currentRow, currentCol)/255.0 + 0.5;
+
+	    		if(this->monoDepthMap.at<float>(currentRow, currentCol) == 0)
+	    			this->monoDepthMap.at<float>(currentRow, currentCol) = 0.5;
+	    	}
+
 			averageDepthMono = this->monoDepthMap.at<float>(currentRow, currentCol) + averageDepthMono;
 
 		}
@@ -46,14 +65,33 @@ void facilMergeAlgorithm::facilOriginal(){
 			this->row = currentRow;
 			mergedDepthMap.at<float>(currentRow, currentCol) = this->computeDepth(currentPixel);
 
-			if(mergedDepthMap.at<float>(currentRow, currentCol) < 0)
-				mergedDepthMap.at<float>(currentRow, currentCol) = averageDepthMono;
+			if(mergedDepthMap.at<float>(currentRow, currentCol) <= 0){
+				mergedDepthMap.at<float>(currentRow, currentCol) = BIAS_GT;
+			}
+
+			if(this->secondMap.at<float>(this->row, this->col) <= 0){
+				this->secondMap.at<float>(this->row, this->col) = BIAS_GT;
+			}
 
 		}
 	
 	}
 	mergedDepthMap.copyTo(this->finalDepthMap);
 
+
+	/// Global Variables
+	int DELAY_CAPTION = 1500;
+	int DELAY_BLUR = 100;
+	int MAX_KERNEL_LENGTH = 6;
+/*
+    for ( int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2 )
+        { cv::GaussianBlur( this->secondMap, this->secondMap, cv::Size( i, i ), 0, 0 );
+         }
+*/
+	cv::Mat copys;
+	 this->secondMap.copyTo(copys);
+     for ( int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2 )
+         { bilateralFilter (copys, this->secondMap, i, i*2, i/2 );}
 }
 
 float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){
@@ -69,8 +107,8 @@ float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){
 
 	for (int currentPointFromSparse = 0; currentPointFromSparse < numberOfPixels2Merge; ++currentPointFromSparse)
 	{
-		  partialWeights[0] = this->computeW1(currentPixelMono, currentPointFromSparse);
-		  partialWeights[1] = this->computeW2(currentPixelMono, currentPointFromSparse);
+		partialWeights[0] = this->computeW1(currentPixelMono, currentPointFromSparse);
+		partialWeights[1] = this->computeW2(currentPixelMono, currentPointFromSparse);
         partialWeights[2] = this->computeW3(currentPixelMono, currentPointFromSparse);
         partialWeights[3] = this->computeW4(currentPixelMono, currentPointFromSparse);
 
@@ -125,36 +163,33 @@ float facilMergeAlgorithm::computeDepth(cv::Point_<int> currentPixelMono){
 	
 		if(vectorNormalizedWeights[currentPointFromSparse2] > threshold){
 							depthSecondMap = depthSecondMap +  vectorNormalizedWeights[currentPointFromSparse2]*(this->stereoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y,this->pixels2BeMerged[currentPointFromSparse2].x) + this->monoDepthMap.at<float>(currentPixelMono.y,currentPixelMono.x) - this->monoDepthMap.at<float>(this->pixels2BeMerged[currentPointFromSparse2].y,this->pixels2BeMerged[currentPointFromSparse2].x));
-				}
-}
+		}}/*
 
-/*
-		  newPixels2BeMerged.push_back(this->pixels2BeMerged.at(currentPointFromSparse2));
-        sumOfAllPartialWeights = sumOfAllPartialWeights + allPartialWeights[currentPointFromSparse2];
-		  newAllPartialWeights.push_back(allPartialWeights[currentPointFromSparse2]);
-        if(firstPartialWeight){
-        	minAllPartialWeights = allPartialWeights[currentPointFromSparse2];
-        	firstPartialWeight = false;
-        }
+			newPixels2BeMerged.push_back(this->pixels2BeMerged.at(currentPointFromSparse2));
+	        sumOfAllPartialWeights = sumOfAllPartialWeights + allPartialWeights[currentPointFromSparse2];
+			newAllPartialWeights.push_back(allPartialWeights[currentPointFromSparse2]);
+        
+	        if(firstPartialWeight){
+	        	minAllPartialWeights = allPartialWeights[currentPointFromSparse2];
+	        	firstPartialWeight = false;
+	        }
 
-        else{
-        	if(allPartialWeights[currentPointFromSparse2] < minAllPartialWeights)
-        		minAllPartialWeights = allPartialWeights[currentPointFromSparse2];
-        }  
+	        else{
+	        	if(allPartialWeights[currentPointFromSparse2] < minAllPartialWeights)
+	        		minAllPartialWeights = allPartialWeights[currentPointFromSparse2];
+	        }  	
 
 		}
-
 	}
 
-	if(newPixels2BeMerged.size() > 0){
+	if(newPixels2BeMerged.size() > 1){
 
 		for (int currentPointFromSparse2 = 0; currentPointFromSparse2 < newPixels2BeMerged.size(); ++currentPointFromSparse2)
 		{
 				float normalizeWeight = 0.0;
 				normalizeWeight =  this->normalizeWeights( newAllPartialWeights[currentPointFromSparse2] , minAllPartialWeights , sumOfAllPartialWeights);
-
 				depthSecondMap = depthSecondMap +  normalizeWeight*(this->stereoDepthMap.at<float>(newPixels2BeMerged[currentPointFromSparse2].y,newPixels2BeMerged[currentPointFromSparse2].x) + this->monoDepthMap.at<float>(currentPixelMono.y,currentPixelMono.x) - this->monoDepthMap.at<float>(newPixels2BeMerged[currentPointFromSparse2].y,newPixels2BeMerged[currentPointFromSparse2].x));
-					
+				
 		}
 	}
 	else{
@@ -184,7 +219,12 @@ float facilMergeAlgorithm::normalizeWeights(float partialWeight, float minAllPar
 	int numberOfPixels2Merge = this->pixels2BeMerged.size();
 	float normalizeWeights;
 
-	normalizeWeights = (partialWeight - minAllPartialWeights)/(sumOfAllPartialWeights - minAllPartialWeights);
+	if(sumOfAllPartialWeights != minAllPartialWeights)
+		normalizeWeights = (partialWeight - minAllPartialWeights)/(sumOfAllPartialWeights - minAllPartialWeights);
+	else
+		normalizeWeights = 1.0;
+		
+			//	std::cout << normalizeWeights << " " << partialWeight << " " << minAllPartialWeights << " " <<  sumOfAllPartialWeights << " "  << "\n";
 
 	return(normalizeWeights);
 

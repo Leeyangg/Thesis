@@ -15,6 +15,7 @@
 #define ZED_CAM_MAP_		4
 #define ZED_DEPTH_MAP_ 		5 
 #define STEREO_IMAGE_ 		6 
+#define CHEAP_DEPTH_ 		7 
 
 class manageObjectInputMap
 {

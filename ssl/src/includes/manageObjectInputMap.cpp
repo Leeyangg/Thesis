@@ -4,6 +4,7 @@ extern  std::string pathLeftImageJSONFile;
 extern  std::string pathRightImageJSONFile;
 extern  std::string formatNameImagesJSONFile;
 extern  std::string sourceGt;
+extern  std::string sourceCheapDepth;
 extern  std::string confidencePathJSONFile;
 extern  int numberFirstFrameJSONFile;
 
@@ -62,6 +63,10 @@ void manageObjectInputMap::setPath2SourceInputMap(){
 		this->path2SourceFolderInputMap = sourceGt;
 	}
 
+	else if(this->inputMapType == CHEAP_DEPTH_){
+		this->path2SourceFolderInputMap = sourceCheapDepth;
+	}
+
 	else if(this->inputMapType == IMAGE_MAP_){
 		this->path2SourceFolderInputMap = pathLeftImageJSONFile;
 	}
@@ -115,6 +120,9 @@ void manageObjectInputMap::displayInputMap(){
 	else if(this->inputMapType == CONFIDENCE_MAP_ || this->inputMapType == ZED_CONFIDENCE_MAP_ )
 		cv::imshow("Confidence Depth Map", this->getInputMap());	
 
+	else if(this->inputMapType == CHEAP_DEPTH_ )
+		cv::imshow("Cheap Depth Map", this->getInputMap());		
+
 	
 }
 
@@ -129,6 +137,9 @@ void manageObjectInputMap::displayInputMapResized(){
 
 	else if(this->inputMapType == CONFIDENCE_MAP_ || this->inputMapType == ZED_CONFIDENCE_MAP_ )
 		cv::imshow("Confidence Depth Map", this->getInputMapResized());		
+
+	else if(this->inputMapType == CHEAP_DEPTH_ )
+		cv::imshow("Cheap Depth Map", this->getInputMapResized());	
 	
 }
 
@@ -174,6 +185,9 @@ void manageObjectInputMap::setInputMapType(std::string inputMapType){
 
 	else if(strcmp("stereo_pair", inputMapType.c_str()) == 0)
 		this->inputMapType = STEREO_IMAGE_;	
+
+	else if(strcmp("cheap_depth", inputMapType.c_str()) == 0)
+		this->inputMapType =  CHEAP_DEPTH_ ;	
 
 }
 

@@ -1,78 +1,101 @@
 {
 	"zed": {
-		"use":true,
+		"use":false,
 		"source": {
-			"opencv":false,
-			"sdk":true
+			"opencv":true,
+			"sdk":false
 		}
 	},
 
 	"importFromFolder": {
-		"use":false,
-		"stereoPair":false,
+		"use":true,
+		"stereoPair":true,
+		"sources": {
+			"left":"/media/diogo/My Passport/aerospace/original/testSet/leftImage/",
+			"right":"/media/diogo/My Passport/aerospace/original/testSet/rightImage/",
+		    "depthGt":"/media/diogo/My Passport/aerospace/original/testSet/depth/",
+		    "cheapDepth":"/media/diogo/My Passport/aerospace/original/testSet/cheapDepth/",
+		    "confidence":"/media/diogo/My Passport/aerospace/original/testSet/cheapConf/",
+		    "thresholdConfidence":0,
+			"format":"",
+			"firstFrame":0,
+			"lastFrame": 1609
+		},
 		"source": {
-			"left":"/media/ubuntu/My Passport/aerospaceDepths/7/images/left/",
-			"right":"/media/ubuntu/My Passport/aerospaceDepths/7/images/right/",
-		    "depthGt":"/media/ubuntu/My Passport/aerospaceDepths/7/depths/gt/",
-		    "confidence":"/media/ubuntu/My Passport/aerospaceDepths/7/depths/confidence/",
-			"format":"20000_f",
-			"firstFrame": 1
+			"left":"/media/diogo/My Passport/aerospace/janiveck/leftImage/",
+			"right":"/media/diogo/My Passport/aerospace/janiveck/rightImage/",
+		    "depthGt":"/media/diogo/My Passport/aerospace/janiveck/depth/",
+		    "cheapDepth":"/media/diogo/My Passport/aerospace/janiveck/cheapDepth/",
+		    "confidence":"/media/diogo/My Passport/aerospace/janiveck/cheapConf/",
+		    "thresholdConfidence":0,
+			"format":"",
+			"firstFrame":430,
+			"lastFrame": 1609
 		}
 	},
 
+
+	"janivanecky":true,
 	"importCnnNoWeightUpdate":{
 		"use":true,
-		"source":{
-			"caffemodel":"/home/ubuntu/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
-			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_deploy.prototxt"
-		},
-		"source1":{
-			"caffemodel":"../nets/trainedNet.caffemodel",
+		"sources":{
+			"caffemodel":"/home/diogo/Desktop/resultsThesis/weightsCnnFinalTrain/dense/resultsFine/RES_iter_138255.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
+		},
+		"sources":{
+			"caffemodel":"/home/diogo/RES_iter_70000.caffemodel",
+			"protofile":"../nets/eigenSSL.prototxt"
+		},
+		"source":{
+			"caffemodel":"/home/diogo/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
+			"protofile":"/home/diogo/Desktop/Depth-Estimation/net_deploy.prototxt"
 		}
 	},
 
 	"importSslCnn":{
-		"use":true,
-		"source2":{
-			"caffemodel":"",
+		"use":false,
+		"sourcek":{
+			"caffemodel":"/home/diogo/Desktop/resultsThesis/weightsCnnFinalTrain/dense/resultsFine/RES_iter_138255.caffemodel",
+			"protofile":"../nets/eigenSSLSparse.prototxt",
+			"solverfile":"../nets/solverSSLSparse.prototxt"
+		},
+		"sources":{
+			"caffemodel":"/home/diogo/Desktop/resultsThesis/weightsCnnFinalTrain/sparse/resultsFine/RES_iter_140000.caffemodel",
 			"protofile":"../nets/eigenSSLSparse.prototxt",
 			"solverfile":"../nets/solverSSLSparse.prototxt"
 		},
 		"source":{
-			"caffemodel":"/home/ubuntu/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
-			"protofile":"/home/ubuntu/Desktop/Depth-Estimation/net_train.prototxt",
-			"solverfile":"/home/ubuntu/Desktop/Depth-Estimation/solver.prototxt"
+			"caffemodel":"/home/diogo/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
+			"protofile":"/home/diogo/Desktop/Depth-Estimation/net_train.prototxt",
+			"solverfile":"/home/diogo/Desktop/Depth-Estimation/solver.prototxt"
 		}
 	},
 
-	"resolutionInputMapsp":{
+	"resolutionInputMapss":{
 		"width":256,
 		"height":160
 	},
-	"resolutionInputMaps":{
+		"resolutionInputMaps":{
 		"width":298,
 		"height":218
 	},
-	"resolutionOutputMapso":{
+	"resolutionOutputMapss":{
 		"width":64,
 		"height":40
 	},
-	"resolutionOutputMaps":{
+		"resolutionOutputMaps":{
 		"width":74,
 		"height":54
 	},
-	"resolutionOutputMaps2":{
-		"width":298,
-		"height":218
-	},
-
 	"scales":{
-		"scaleOriginalCnnMap": 10.0,
-		"scaleSslCnnMap": 10.0
+		"scaleOriginalCnnMap": 20.0,
+		"scaleSslCnnMap": 20.0
 	},
 
-	"merge": true,
-	"stereoOPenCV": true,
-	"displayMaps": true
+	"scaleGT": 20.0,
+
+	"merge": true	,
+	"stereoOPenCV": false,
+	"displayMaps": true,
+	"facil":false
 }

@@ -5,15 +5,23 @@ extern  cv::Size resolutionOutputMapsJSONFile;
 manageObjectDepthMap::manageObjectDepthMap(){
 
 	this->thresholdFilter = 30;	
+	this->availablePixelFromSparse =0;
 
 }
 manageObjectDepthMap::~manageObjectDepthMap(){}
 
 void manageObjectDepthMap::setDepthMap(cv::Mat referenceMap){
-
 	referenceMap.copyTo(this->depthMap);
-
 }
+
+void manageObjectDepthMap::setConfidenceMap(cv::Mat referenceMap){
+	referenceMap.copyTo(this->confidenceMap);
+}
+
+void manageObjectDepthMap::setEdgeMap(cv::Mat referenceMap){
+	referenceMap.copyTo(this->edgeMap);
+}
+
 
 void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string method, float scaleInputDepthMap, float scaleSSLCnnMap){
 
@@ -25,13 +33,35 @@ void manageObjectDepthMap::mergeDepthMap(cv::Mat map2MergeWith, std::string meth
 		this->merger.setScaleMonoDepthMap(scaleSSLCnnMap);
 		this->merger.setScaleStereoDepthMap(scaleInputDepthMap);
 
-		if(this->pixels2BeMerged.size() > 0)
+		if(this->pixels2BeMerged.size() > 0){
 			this->merger.facilOriginal();
-		
-		this->mergedDepthMap = merger.getFinalDepthMap();
-		this->secondMap = merger.getSecondMap();
+			this->mergedDepthMap = merger.getFinalDepthMap();
+			this->secondMap = merger.getSecondMap();
+		}
+
+		else{
+			this->depthMap.copyTo(this->mergedDepthMap);
+			this->depthMap.copyTo(this->secondMap);
+		}
+
 		this->merger.pixels2BeMerged.clear();
 
+	}
+
+
+	else if(strcmp("confMerger", method.c_str()) == 0){
+
+		this->confMerger.setmonoDepthMap(this->depthMap);
+		this->confMerger.setstereoDepthMap(map2MergeWith);		
+		this->confMerger.setConfidenceMap(this->confidenceMap);
+		this->confMerger.setEdgeMap(this->edgeMap);			
+		this->confMerger.setScaleMonoDepthMap(scaleSSLCnnMap);		
+		this->confMerger.setScaleStereoDepthMap(scaleInputDepthMap);
+
+		this->confMerger.merge();
+		this->mergedDepthMap =this->confMerger.getFinalDepthMap();
+		this->secondMap =this->confMerger.getSecondMap();
+		
 	}
 
 }
@@ -49,24 +79,62 @@ cv::Mat manageObjectDepthMap::getSecondMap(){
 }
 
 
+cv::Mat manageObjectDepthMap::getPointsForSSL(){
+	return(this->pointsForSSL);
+}
+
+int manageObjectDepthMap::getNumberPixelsForMerge(){
+	return(this->availablePixelFromSparse);
+}
+
+void manageObjectDepthMap::filterPixels2BeMerged(cv::Mat referenceMap, int threshold){
+
+	this->availablePixelFromSparse = 0;
+	referenceMap.convertTo(referenceMap, CV_32FC1);
+	this->pointsForSSL.create(referenceMap.rows, referenceMap.cols, CV_32FC1);
+	int rowsInputMap = referenceMap.rows;
+	int colsInputMap = referenceMap.cols;
+	cv::Point_<int> addPixel2Fusion;
+
+	for(int currentRow = 0; currentRow < rowsInputMap; currentRow++){
+		for(int currentCol = 0; currentCol < colsInputMap; currentCol++){
+			if(referenceMap.at<float>(currentRow, currentCol) >= threshold ) {
+				addPixel2Fusion.x = currentCol;
+				addPixel2Fusion.y = currentRow;
+				(this->pixels2BeMerged).push_back(addPixel2Fusion);
+				this->pointsForSSL.at<float>(currentRow, currentCol) = 1.0;
+				this->availablePixelFromSparse++;
+			}
+
+			else
+				this->pointsForSSL.at<float>(currentRow, currentCol) = 0.0;
+		}
+	}
+}
+
 void manageObjectDepthMap::filterPixels2BeMerged(cv::Mat referenceMap){
 
+	this->availablePixelFromSparse = 0;
 	cv::Mat referenceMapResized;
 	cv::resize(referenceMap, referenceMapResized, resolutionOutputMapsJSONFile);
-
+	this->pointsForSSL.create(referenceMapResized.rows, referenceMapResized.cols, CV_32FC1);
 	int rowsInputMap = referenceMapResized.rows;
 	int colsInputMap = referenceMapResized.cols;
 	cv::Point_<int> addPixel2Fusion;
 
 	for(int currentRow = 0; currentRow < rowsInputMap; currentRow++){
 		for(int currentCol = 0; currentCol < colsInputMap; currentCol++){
-			
-			//if(confidenceLevel < this->thresholdFilter) {
-			if(referenceMapResized.at<float>(currentRow, currentCol) > 0.0) {
+
+			if(referenceMapResized.at<float>(currentRow, currentCol) > 0.0 ) {
 				addPixel2Fusion.x = currentCol;
 				addPixel2Fusion.y = currentRow;
 				(this->pixels2BeMerged).push_back(addPixel2Fusion);
+				this->pointsForSSL.at<float>(currentRow, currentCol) = 1.0;
+				this->availablePixelFromSparse++;
 			}
+
+			else
+				this->pointsForSSL.at<float>(currentRow, currentCol) = 0.0;
 		}
 	}
 }
@@ -163,7 +231,7 @@ void displayObjectDepthMap::useColorMap(int choiceMap){
 			break;
 
 		case 2: 
-			applyColorMap(this->map, this->colorMap,  cv::COLORMAP_BONE);
+			applyColorMap(this->map, this->colorMap,  cv::COLORMAP_JET);
 			break;
 
 		default:
@@ -172,9 +240,9 @@ void displayObjectDepthMap::useColorMap(int choiceMap){
 	}
 }
 
-void displayObjectDepthMap::saveMap(){
+void displayObjectDepthMap::saveMap(int frame){
 
-	cv::imwrite("/" + this->windowTitle + std::to_string(this->saveCounter) + ".jpeg", map);
+	cv::imwrite("./images/" + this->windowTitle + std::to_string(frame) + ".jpg", this->colorMap);
 
 }
 

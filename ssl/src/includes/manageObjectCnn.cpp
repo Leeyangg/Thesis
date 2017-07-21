@@ -6,6 +6,7 @@ extern  std::string pathProtofileCnnJSONFile;
 extern  std::string pathCaffemodelSslCnnJSONFile;
 extern  std::string pathProtofileSslCnnJSONFile;
 extern  std::string pathSolverfileSslCnnJSONFile;
+extern 	bool janivanecky;
 
 manageObjectCnn::manageObjectCnn(std::string typeOfNet){
 
@@ -52,15 +53,25 @@ void manageObjectCnn::setTypeOfNet(std::string typeOfNet){
 
 }
 
-void manageObjectCnn::forwardPassCnn(){
+void manageObjectCnn::saveSnapshot(){
+
+	this->solver->Snapshot();
+
+}
+
+void manageObjectCnn::forwardPassCnn(bool learn){
 
 	if(this->typeOfNet == SOLVER_){
-		this->solver->Step(1);
-	}
+		if(learn)
+			this->solver->Step(1);
 
+		else
+			this->solver->net()->Forward();
+	}
 
 	else
 		this->cnn->Forward();
+
 }
 
 void manageObjectCnn::setPathToProtoFile(){
@@ -359,16 +370,23 @@ void manageObjectCnn::computeMeanDepthMap(){
 		}
 	}
 	this->meanDepthMap = sumOfDepths/counterPositiveSamples*this->depthScale;
-	//std::cout << counterPositiveSamples << std::endl;
+
 }
 
 void manageObjectCnn::replaceNegativeDepths(){
+	int inv = 0;
 	for(int currentRow = 0; currentRow < this->outputLayerSize.height;currentRow++){
-
 		for(int currentCol =0;currentCol<this->outputLayerSize.width;currentCol++){
 
-			if(this->cnnDepthMap.at<float>(currentRow,currentCol) < 0.0)
-				this->cnnDepthMap.at<float>(currentRow,currentCol) = this->meanDepthMap/this->depthScale;
+			if(this->cnnDepthMap.at<float>(currentRow,currentCol) < 0.0 ){
+				this->cnnDepthMap.at<float>(currentRow,currentCol) = 0.0;
+				inv++;
+			}
+
+			 if(this->cnnDepthMap.at<float>(currentRow,currentCol) > 1.0 && !janivanecky ){
+				this->cnnDepthMap.at<float>(currentRow,currentCol) = 1.0;
+				inv++;
+			}
 				
 		}
 	}
