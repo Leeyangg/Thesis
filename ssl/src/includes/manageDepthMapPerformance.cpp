@@ -12,7 +12,7 @@ manageDepthMapPerformance::manageDepthMapPerformance(){
 	this->linearRMSE = 0.0;
 	this->logRMSE = 0.0;
 	this->scaleInvariantError = 0.0;
-	this->thresholdErrorThreshold = 1.25;
+	this->thresholdErrorThreshold = pow(1.25,2);
 	this->scaleDepthMap = 1.0;
 	this->scaleGroundTruth = 1.0;
 

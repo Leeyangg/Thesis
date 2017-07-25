@@ -1,5 +1,6 @@
 #include "confidenceMergeAlgorithm.h"
 extern bool janivanecky;
+extern bool displayOutputsJSONFile;
 
 confidenceMergeAlgorithm::confidenceMergeAlgorithm(){}
 
@@ -19,6 +20,8 @@ void confidenceMergeAlgorithm::merge(){
 	int colsInputMap = this->monoDepthMap.cols;
 	cv::Point_<int> currentPixel;
 
+
+
 	for (int currentRow = 0; currentRow < rowsInputMap; ++currentRow)
 	{
 		for (int currentCol = 0; currentCol < colsInputMap; ++currentCol)
@@ -32,6 +35,7 @@ void confidenceMergeAlgorithm::merge(){
 
 	    	if(!janivanecky)
 	    		this->monoDepthMap.at<float>(currentRow, currentCol) =  this->monoDepthMap.at<float>(currentRow, currentCol)*(19.50*(-1.0))+20.0;
+	    		//this->monoDepthMap.at<float>(currentRow, currentCol) =  39.75*this->monoDepthMap.at<float>(currentRow, currentCol)+0.25;
 
 	    	else{
 	    		this->monoDepthMap.at<float>(currentRow, currentCol) = 19.5*(this->monoDepthMap.at<float>(currentRow, currentCol)) + 0.5;
@@ -40,8 +44,8 @@ void confidenceMergeAlgorithm::merge(){
 			averageDepthMono = this->monoDepthMap.at<float>(currentRow, currentCol) + averageDepthMono;
 
 		}
-	}
 
+	}
 
 	averageDepthMono = averageDepthMono /(rowsInputMap*colsInputMap);
 	cv::minMaxLoc(this->confidenceMap, &min, &max);
@@ -55,39 +59,64 @@ void confidenceMergeAlgorithm::merge(){
 		scaleDivider = 10.0;
 
 	cv::Mat errorMat(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
+	cv::Mat errorMat2(this->monoDepthMap.rows,this->monoDepthMap.cols, CV_32FC1);
 	for (int currentRow = 0; currentRow < rowsInputMap; ++currentRow)
 	{
 		for (int currentCol = 0; currentCol < colsInputMap; ++currentCol)
 		{
-			int weight = (int) this->confidenceMap.at<uchar>(currentRow, currentCol);
-		//	weightNormalized =  computeWeight((double)weight,(double)  max);
+			if(currentCol > 0.05*colsInputMap){
 
-			if(this->edgeMap.at<uchar>(currentRow, currentCol) == 255){
-				weightNormalized = 1.0; 
-			}
+				int weight = (int) this->confidenceMap.at<uchar>(currentRow, currentCol);
+			//	weightNormalized =  computeWeight((double)weight,(double)  max);
 
-			else
-				weightNormalized = this->computeWeightBasedOnDistanceToEdge(currentRow,currentCol);
+				if(this->edgeMap.at<uchar>(currentRow, currentCol) == 255){
+					weightNormalized = 1.0; 
+				}
 
-			mergedDepthMap2.at<float>(currentRow, currentCol) =  this->stereoDepthMap.at<float>(currentRow, currentCol)*weightNormalized + (1-weightNormalized)*this->monoDepthMap.at<float>(currentRow, currentCol);
+				else
+					weightNormalized = this->computeWeightBasedOnDistanceToEdge(currentRow,currentCol);
 
-			if(this->monoDepthMap.at<float>(currentRow, currentCol) > this->stereoDepthMap.at<float>(currentRow, currentCol) ){
-				cnnZedNormalized = computeWeight( this->stereoDepthMap.at<float>(currentRow, currentCol)/20.0, (float) this->monoDepthMap.at<float>(currentRow, currentCol)/scaleDivider);
+				//mergedDepthMap2.at<float>(currentRow, currentCol) =  this->stereoDepthMap.at<float>(currentRow, currentCol)*weightNormalized + (1-weightNormalized)*this->monoDepthMap.at<float>(currentRow, currentCol);
 
+				if(this->monoDepthMap.at<float>(currentRow, currentCol) > this->stereoDepthMap.at<float>(currentRow, currentCol) ){
+					cnnZedNormalized = computeWeight( this->stereoDepthMap.at<float>(currentRow, currentCol)/20.0, (float) this->monoDepthMap.at<float>(currentRow, currentCol)/scaleDivider);
+
+				}
+
+				else{
+					cnnZedNormalized = computeWeight( (float)this->monoDepthMap.at<float>(currentRow, currentCol)/scaleDivider,  this->stereoDepthMap.at<float>(currentRow, currentCol)/20.0);
+				}
+
+					errorMat.at<float>(currentRow, currentCol) = weightNormalized;
+					errorMat2.at<float>(currentRow, currentCol) = cnnZedNormalized;
+					mergedDepthMap2.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*weightNormalized + (1-weightNormalized)*(  (1- cnnZedNormalized)*this->monoDepthMap.at<float>(currentRow, currentCol)+  this->stereoDepthMap.at<float>(currentRow, currentCol)*cnnZedNormalized );
+					mergedDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*weightNormalized + (1-weightNormalized)*(  (1- cnnZedNormalized)*((this->monoDepthMap.at<float>(currentRow, currentCol)/scaleDivider)*20.0)+  this->stereoDepthMap.at<float>(currentRow, currentCol)*cnnZedNormalized );
+			
 			}
 
 			else{
-				cnnZedNormalized = computeWeight( (float)this->monoDepthMap.at<float>(currentRow, currentCol)/scaleDivider,  this->stereoDepthMap.at<float>(currentRow, currentCol)/20.0);
+				errorMat.at<float>(currentRow, currentCol) = 0.0;
+				errorMat2.at<float>(currentRow, currentCol) = 0.0;
+				mergedDepthMap2.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol);
+				mergedDepthMap.at<float>(currentRow, currentCol) = this->monoDepthMap.at<float>(currentRow, currentCol);
 			}
-				errorMat.at<float>(currentRow, currentCol) = cnnZedNormalized;
-				mergedDepthMap.at<float>(currentRow, currentCol) = this->stereoDepthMap.at<float>(currentRow, currentCol)*weightNormalized + (1-weightNormalized)*(  (1- cnnZedNormalized)*this->monoDepthMap.at<float>(currentRow, currentCol)+  this->stereoDepthMap.at<float>(currentRow, currentCol)*cnnZedNormalized );
+
 		}
 	}
 
 	cv::minMaxLoc(errorMat, &min, &max);
 	errorMat = errorMat/max;
-	cv::imshow("weights", errorMat);
+	
+	if(displayOutputsJSONFile){
+		cv::imshow("WeightC", errorMat);
+		cv::imshow("WeightS", errorMat2);
+	}
 
+	errorMat = errorMat*255;
+	errorMat2 = errorMat2*255;
+	cv::imwrite("./images/weightsC/weightsC" + std::to_string(this->frame) + ".jpg", errorMat);
+	cv::imwrite("./images/weightsS/weightsS" + std::to_string(this->frame) + ".jpg", errorMat2);
+	this->frame++;
 	mergedDepthMap2.copyTo(this->secondMap);
 	averageDepthMono = averageDepthMono /(rowsInputMap*colsInputMap);
 	mergedDepthMap.copyTo(this->finalDepthMap);
@@ -96,32 +125,70 @@ void confidenceMergeAlgorithm::merge(){
 	int DELAY_CAPTION = 1500;
 	int DELAY_BLUR = 100;
 	int MAX_KERNEL_LENGTH = 6;
-	cv::Mat copys;
+	cv::Mat copys, copuu;
 	this->finalDepthMap.copyTo(copys);
+	this->secondMap.copyTo(copuu);
     for ( int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2 )
          { 
-         	bilateralFilter (copys, this->finalDepthMap, i, i*2, i/2 );
+         	//bilateralFilter (copys, this->finalDepthMap, i, i*2, i/2 );
+         	 medianBlur (copys, this->finalDepthMap, i);
+         	 medianBlur (copuu, this->secondMap, i);
          }
 }
 
 float confidenceMergeAlgorithm::computeWeightBasedOnDistanceToEdge(int row, int col){
 
-	int counter = 1;
-	int searchRegion = 10;
+	int counter = 2.0;
+	int maxDist = 10;
+	this->searchRegion.leftHorizontal = maxDist;
+	this->searchRegion.rightHorizontal = maxDist;
+	this->searchRegion.topVertical = maxDist;
+	this->searchRegion.downVertical = maxDist;
 
-	if(row < searchRegion || col < searchRegion || (row + searchRegion) > this->edgeMap.rows || (col + searchRegion) > this->edgeMap.cols  )
-		return(0.0);
+	if(col < maxDist)
+		this->searchRegion.leftHorizontal = col;
 
-	else{
+	if(row < maxDist)
+		this->searchRegion.topVertical = row;
 
-		for (int i = 0; i < searchRegion; ++i)
+	if(row + maxDist  > this->edgeMap.rows )
+		this->searchRegion.downVertical = row + maxDist - this->edgeMap.rows ;
+ 	
+	if(col + maxDist  > this->edgeMap.cols )
+		this->searchRegion.rightHorizontal = col + maxDist - this->edgeMap.cols ;
+
+
+		for (int i = 0; i < maxDist; ++i)
 		{
-			if(this->edgeMap.at<uchar>(row-counter, col) == 255 || this->edgeMap.at<uchar>(row, col-counter) == 255 || this->edgeMap.at<uchar>(row+counter, col) == 255 || this->edgeMap.at<uchar>(row, col+counter) == 255)
-				return(1/counter);
+
+			if(i < this->searchRegion.leftHorizontal){
+				if ((this->edgeMap.at<uchar>(row, col-counter) == 255))
+					return(1.0/counter);
+			}
 			
+
+			if(i < this->searchRegion.rightHorizontal){
+				if ( (this->edgeMap.at<uchar>(row, col+counter) == 255)){
+					return(1.0/counter);
+				}
+			}
+			
+
+			if(i < this->searchRegion.topVertical){
+				if ((this->edgeMap.at<uchar>(row-counter, col) == 255)){
+					return(1.0/counter);
+				}
+			}
+
+			if(i < this->searchRegion.downVertical){
+				if ((this->edgeMap.at<uchar>(row+counter, col) == 255)){
+					return(1.0/counter);
+				}
+			}
+
 			counter++;
 		}
-	}
+	
 
 	return(0.0);
 }

@@ -51,7 +51,7 @@ public:
 	void displayMat();
 	void displayColorMat();
 	void useColorMap(int choiceMap);
-	void saveMap(int frame);
+	void saveMap(int frame,std::string name);
 	void setMap(cv::Mat map, std::string windowTitle);
 
 private:

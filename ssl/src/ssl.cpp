@@ -158,7 +158,7 @@ int  main(int argc, char const *argv[])
 			cv::cvtColor( inputImageCnn, grayInputImageCnn, CV_BGR2GRAY);
 			cv::blur( grayInputImageCnn, edgesInputImageCnn, cv::Size(3,3));
 			cv::resize(grayInputImageCnn,grayInputImageCnn,resolutionOutputMapsJSONFile);
-			cv::Canny(  grayInputImageCnn, edgesInputImageCnn, 25,70,3 );
+			cv::Canny(  grayInputImageCnn, edgesInputImageCnn, 100,200,3 );
  
 			if(displayOutputsJSONFile)
 			    cv::imshow( "Edges input image",edgesInputImageCnn);
@@ -219,11 +219,13 @@ int  main(int argc, char const *argv[])
 				displayDepthColorMap.setScaleFactor(1.0);
 				displayDepthColorMap.useColorMap(1);
 				displayDepthColorMap.displayColorMat();
+				displayDepthColorMap.saveMap(currentFrame, "gt");
 				displayCheapDepthColorMap.setMapResolution(resolutionOutputMapsJSONFile);
 				displayCheapDepthColorMap.setMap(displayCheap, "Cheap Stereo");	
 				displayCheapDepthColorMap.setScaleFactor(1.0);
 				displayCheapDepthColorMap.useColorMap(1);
 				displayCheapDepthColorMap.displayColorMat();
+				displayCheapDepthColorMap.saveMap(currentFrame, "cheap");
 
 			}
 
@@ -260,12 +262,12 @@ int  main(int argc, char const *argv[])
 				performanceStereoMap->setScaleDepthMap(1.0);
 				performanceStereoMap->setScaleGroundTruth(scaleGT);
 				performanceStereoMap->computePerformance();
-				costsFile << "stereo " << performanceStereoMap->getThresholdError() << " " << performanceStereoMap->getAbsoluteRelativeError()  << " " << performanceStereoMap->getSquaredRelativeError() 
+				std::cout  << "stereo " << performanceStereoMap->getThresholdError() << " " << performanceStereoMap->getAbsoluteRelativeError()  << " " << performanceStereoMap->getSquaredRelativeError() 
 				<< " " << performanceStereoMap->getLinearRMSE()  << " " << performanceStereoMap->getLogRMSE()  << " " << performanceStereoMap->getScaleInvariantError()  << std::endl;
 			
 			}
 
-			
+		
 			if(mergeFromConfidenceMap){
 				if(!zedSourceSdkJSONFile){
 					depthCnn.filterPixels2BeMerged(inputConfidenceMap->getInputMapResized(), thresholdConfidenceJSONFile);
@@ -305,11 +307,14 @@ int  main(int argc, char const *argv[])
 						{ 
 							for (int col = 0; col < depthMapToBeMerged.cols; col++)
 							{
+								
 								displayCNN.at<float>(row, col) = (-1*((float)depthMapToBeMerged.at<float>(row, col)) + 1.0);
 							}				
 						}
 					
+						
 						displayDepthOriginalCnnColorMap.setMap(displayCNN, "Original CNN Depth Map");
+
 					}
 
 					else
@@ -317,11 +322,11 @@ int  main(int argc, char const *argv[])
 					
 						displayDepthOriginalCnnColorMap.setScaleFactor(255.0);
 
-
 					displayDepthOriginalCnnColorMap.useColorMap(1);
 					displayDepthOriginalCnnColorMap.displayColorMat();
+					displayDepthOriginalCnnColorMap.saveMap(currentFrame, "cnn");
 				}
-	
+
 				performanOriginalCnnMap->setDepthMapGroundTruth(depthGT);
 				performanOriginalCnnMap->setDepthMapEstimation(cnn->getCnnOutputMap());
 				performanOriginalCnnMap->setScaleDepthMap(scaleOriginalCnnMap);
@@ -371,6 +376,7 @@ int  main(int argc, char const *argv[])
 					displayDepthCnnSSLColorMap.setScaleFactor(255.0);
 					displayDepthCnnSSLColorMap.useColorMap(1);
 					displayDepthCnnSSLColorMap.displayColorMat();
+					displayDepthCnnSSLColorMap.saveMap(currentFrame, "ssl");
 				}
 
 				performanCnnMap->setDepthMapGroundTruth(depthGT);
@@ -422,6 +428,7 @@ int  main(int argc, char const *argv[])
 						displayMergedMap.setScaleFactor(1.0/scaleGT);
 						displayMergedMap.useColorMap(1);
 						displayMergedMap.displayColorMat();
+						displayMergedMap.saveMap(currentFrame, "merged");
 						//displayMergedMap.saveMap(currentFrame);
 
 						displaySecondMap.setMapResolution(resolutionOutputMapsJSONFile);
@@ -429,6 +436,7 @@ int  main(int argc, char const *argv[])
 						displaySecondMap.setScaleFactor(1.0/scaleGT);
 						displaySecondMap.useColorMap(1);
 						displaySecondMap.displayColorMat();
+						displayMergedMap.saveMap(currentFrame, "merged2");
 
 
 					}
@@ -482,7 +490,7 @@ int  main(int argc, char const *argv[])
 
 		}
 
-		std::cout << "Minutes to go = "<<  ((double)totalFrames -currentFrame)*((clock() - startTime)/CLOCKS_PER_SEC)/60.0 << "\n";
+		std::cout << "Minutes to go = "<<  double ((double)totalFrames -currentFrame)*(((double)clock() -(double) startTime)/(double)CLOCKS_PER_SEC)/60.0 << "\n";
 		
 		if(displayOutputsJSONFile)
 			cv::waitKey(50);

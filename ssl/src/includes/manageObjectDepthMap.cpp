@@ -1,6 +1,7 @@
 #include "manageObjectDepthMap.h"
 
 extern  cv::Size resolutionOutputMapsJSONFile;
+extern bool displayOutputsJSONFile;
 
 manageObjectDepthMap::manageObjectDepthMap(){
 
@@ -240,9 +241,9 @@ void displayObjectDepthMap::useColorMap(int choiceMap){
 	}
 }
 
-void displayObjectDepthMap::saveMap(int frame){
+void displayObjectDepthMap::saveMap(int frame, std::string name){
 
-	cv::imwrite("./images/" + this->windowTitle + std::to_string(frame) + ".jpg", this->colorMap);
+	cv::imwrite("./images/" + name+"/" + this->windowTitle + std::to_string(frame) + ".jpg", this->colorMap);
 
 }
 

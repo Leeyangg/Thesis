@@ -4,6 +4,12 @@
 // OpenCV includes
 #include "opencv2/opencv.hpp"
 
+struct structSearchRegion{
+	int leftHorizontal;
+	int rightHorizontal;
+	int topVertical;
+	int downVertical;
+};
 
 class confidenceMergeAlgorithm
 {
@@ -34,4 +40,7 @@ public:
  	float scaleStereoDepthMap = 10.0/255.0;
  	double computeWeight(double conf, double maxConf);
  	float computeWeightBasedOnDistanceToEdge(int row, int col);
+	structSearchRegion searchRegion;
+	int frame = 0;
+
 };

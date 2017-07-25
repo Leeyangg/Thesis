@@ -10,7 +10,7 @@
 	"importFromFolder": {
 		"use":true,
 		"stereoPair":true,
-		"sources": {
+		"source": {
 			"left":"/media/diogo/My Passport/aerospace/original/testSet/leftImage/",
 			"right":"/media/diogo/My Passport/aerospace/original/testSet/rightImage/",
 		    "depthGt":"/media/diogo/My Passport/aerospace/original/testSet/depth/",
@@ -19,9 +19,9 @@
 		    "thresholdConfidence":0,
 			"format":"",
 			"firstFrame":0,
-			"lastFrame": 1609
+			"lastFrame": 691
 		},
-		"source": {
+		"sources": {
 			"left":"/media/diogo/My Passport/aerospace/janiveck/leftImage/",
 			"right":"/media/diogo/My Passport/aerospace/janiveck/rightImage/",
 		    "depthGt":"/media/diogo/My Passport/aerospace/janiveck/depth/",
@@ -29,7 +29,7 @@
 		    "confidence":"/media/diogo/My Passport/aerospace/janiveck/cheapConf/",
 		    "thresholdConfidence":0,
 			"format":"",
-			"firstFrame":430,
+			"firstFrame":918,
 			"lastFrame": 1609
 		}
 	},
@@ -43,8 +43,16 @@
 			"protofile":"../nets/eigenSSL.prototxt"
 		},
 		"sources":{
-			"caffemodel":"/home/diogo/RES_iter_70000.caffemodel",
+			"caffemodel":"/home/diogo/Desktop/resultsThesis/deepSparseLearning/sparse/resultsFine/RES_iter_140000.caffemodel",
 			"protofile":"../nets/eigenSSL.prototxt"
+		},
+		"sources":{
+			"caffemodel":"/home/diogo/Desktop/datasets/nets/mix_lstm/mix_lstm.caffemodel",
+			"protofile":"/home/diogo/Desktop/datasets/nets/mix_lstm/mix_lstm_deploy.prototxt"
+		},
+		"sources":{
+			"caffemodel":"/home/diogo/Desktop/datasets/nets/mix_fcn/mix_fcn.caffemodel",
+			"protofile":"/home/diogo/Desktop/datasets/nets/mix_fcn/mix_fcn_deploy.prototxt"
 		},
 		"source":{
 			"caffemodel":"/home/diogo/Desktop/Depth-Estimation/model_norm_abs_100k.caffemodel",
@@ -78,6 +86,11 @@
 		"resolutionInputMaps":{
 		"width":298,
 		"height":218
+	},
+
+		"resolutionOutputMapss":{
+		"width":256,
+		"height":160
 	},
 	"resolutionOutputMapss":{
 		"width":64,
